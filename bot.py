@@ -1,0 +1,207 @@
+
+import os
+import sqlite3
+import asyncio
+
+from aiogram import Bot, Dispatcher, F
+from aiogram.filters import Command
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.fsm.state import StatesGroup, State
+from aiogram.fsm.context import FSMContext
+
+TOKEN = "8568105038:AAHVmeBwvYrcTqwMPEokNWrLLt5Ka8XJs10"
+ADMINS = [5639087435] 
+
+bot = Bot(TOKEN)
+dp = Dispatcher()
+
+db = sqlite3.connect("database.db")
+cur = db.cursor()
+
+class AddBusiness(StatesGroup):
+    id = State()
+    name = State()
+    owner = State()
+    location = State()
+
+class ChangeOwner(StatesGroup):
+    business_id = State()
+    owner = State()
+
+class ChangeLocation(StatesGroup):
+    business_id = State()
+    location = State()
+
+class UploadPhoto(StatesGroup):
+    business_id = State()
+    photo = State()
+
+@dp.message(Command("start"))
+async def start(message: Message):
+    await message.answer("Команда поиска:\n/business ID")
+
+@dp.message(Command("business"))
+async def business(message: Message):
+    args = message.text.split()
+
+    if len(args) != 2:
+        await message.answer("Пример: /business 1001")
+        return
+
+    cur.execute(
+        "SELECT name, owner, location, photo_id FROM businesses WHERE id=?",
+        (args[1],)
+    )
+    row = cur.fetchone()
+
+    if not row:
+        await message.answer("Бизнес не найден.")
+        return
+
+    name, owner, location, photo_id = row
+
+    text = (
+        f"🏢 Полное название: {name}\n\n"
+        f"👤 Владелец: {owner}\n\n"
+        f"📍 Местоположение:\n{location}"
+    )
+
+    if photo_id:
+        await message.answer_photo(photo_id, caption=text)
+    else:
+        await message.answer(text)
+
+@dp.message(Command("admin"))
+async def admin(message: Message):
+    if message.from_user.id not in ADMINS:
+        return
+
+    kb = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="➕ Добавить бизнес")],
+            [KeyboardButton(text="👤 Изменить владельца")],
+            [KeyboardButton(text="📍 Изменить адрес")],
+            [KeyboardButton(text="📷 Добавить фото")]
+        ],
+        resize_keyboard=True
+    )
+
+    await message.answer("Админ-панель", reply_markup=kb)
+
+@dp.message(F.text == "➕ Добавить бизнес")
+async def add_start(message: Message, state: FSMContext):
+    if message.from_user.id not in ADMINS:
+        return
+    await state.set_state(AddBusiness.id)
+    await message.answer("Введите ID бизнеса")
+
+@dp.message(AddBusiness.id)
+async def add_id(message: Message, state: FSMContext):
+    await state.update_data(id=message.text)
+    await state.set_state(AddBusiness.name)
+    await message.answer("Введите название бизнеса")
+
+@dp.message(AddBusiness.name)
+async def add_name(message: Message, state: FSMContext):
+    await state.update_data(name=message.text)
+    await state.set_state(AddBusiness.owner)
+    await message.answer("Введите владельца")
+
+@dp.message(AddBusiness.owner)
+async def add_owner(message: Message, state: FSMContext):
+    await state.update_data(owner=message.text)
+    await state.set_state(AddBusiness.location)
+    await message.answer("Введите адрес")
+
+@dp.message(AddBusiness.location)
+async def add_location(message: Message, state: FSMContext):
+    data = await state.get_data()
+
+    cur.execute(
+        "INSERT INTO businesses(id,name,owner,location) VALUES(?,?,?,?)",
+        (data["id"], data["name"], data["owner"], message.text)
+    )
+    db.commit()
+
+    await state.clear()
+    await message.answer("Бизнес добавлен.")
+
+@dp.message(F.text == "👤 Изменить владельца")
+async def owner_start(message: Message, state: FSMContext):
+    await state.set_state(ChangeOwner.business_id)
+    await message.answer("Введите ID бизнеса")
+
+@dp.message(ChangeOwner.business_id)
+async def owner_bid(message: Message, state: FSMContext):
+    await state.update_data(id=message.text)
+    await state.set_state(ChangeOwner.owner)
+    await message.answer("Введите нового владельца")
+
+@dp.message(ChangeOwner.owner)
+async def owner_save(message: Message, state: FSMContext):
+    data = await state.get_data()
+
+    cur.execute(
+        "UPDATE businesses SET owner=? WHERE id=?",
+        (message.text, data["id"])
+    )
+    db.commit()
+
+    await state.clear()
+    await message.answer("Владелец изменён.")
+
+@dp.message(F.text == "📍 Изменить адрес")
+async def location_start(message: Message, state: FSMContext):
+    await state.set_state(ChangeLocation.business_id)
+    await message.answer("Введите ID бизнеса")
+
+@dp.message(ChangeLocation.business_id)
+async def location_bid(message: Message, state: FSMContext):
+    await state.update_data(id=message.text)
+    await state.set_state(ChangeLocation.location)
+    await message.answer("Введите новый адрес")
+
+@dp.message(ChangeLocation.location)
+async def location_save(message: Message, state: FSMContext):
+    data = await state.get_data()
+
+    cur.execute(
+        "UPDATE businesses SET location=? WHERE id=?",
+        (message.text, data["id"])
+    )
+    db.commit()
+
+    await state.clear()
+    await message.answer("Адрес обновлён.")
+
+@dp.message(F.text == "📷 Добавить фото")
+async def photo_start(message: Message, state: FSMContext):
+    await state.set_state(UploadPhoto.business_id)
+    await message.answer("Введите ID бизнеса")
+
+@dp.message(UploadPhoto.business_id)
+async def photo_bid(message: Message, state: FSMContext):
+    await state.update_data(id=message.text)
+    await state.set_state(UploadPhoto.photo)
+    await message.answer("Отправьте фотографию")
+
+@dp.message(UploadPhoto.photo, F.photo)
+async def photo_save(message: Message, state: FSMContext):
+    data = await state.get_data()
+
+    photo_id = message.photo[-1].file_id
+
+    cur.execute(
+        "UPDATE businesses SET photo_id=? WHERE id=?",
+        (photo_id, data["id"])
+    )
+    db.commit()
+
+    await state.clear()
+    await message.answer("Фото сохранено.")
+
+async def main():
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    asyncio.run(main())
