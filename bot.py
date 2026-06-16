@@ -17,6 +17,24 @@ dp = Dispatcher()
 
 db = sqlite3.connect("database.db")
 cur = db.cursor()
+def get_role(user_id):
+    row = cur.execute(
+        "SELECT role FROM roles WHERE user_id=?",
+        (user_id,)
+    ).fetchone()
+
+    if row:
+        return row[0]
+
+    return 0
+
+
+def is_editor(user_id):
+    return get_role(user_id) >= 1
+
+
+def is_creator(user_id):
+    return get_role(user_id) >= 2
 
 class AddBusiness(StatesGroup):
     id = State()
@@ -200,8 +218,50 @@ async def photo_save(message: Message, state: FSMContext):
     await state.clear()
     await message.answer("Фото сохранено.")
 
+
+@dp.message(Command("setrole"))
+async def set_role(message: Message):
+    if message.from_user.id not in ADMINS:
+        return
+
+    args = message.text.split()
+
+    if len(args) != 3:
+        await message.answer(
+            "Пример:\n/setrole 123456789 1"
+        )
+        return
+
+    user_id = int(args[1])
+    role = int(args[2])
+
+    if role not in [0, 1, 2]:
+        await message.answer(
+            "0 - Пользователь\n"
+            "1 - Редактор\n"
+            "2 - Создатель"
+        )
+        return
+
+    cur.execute(
+        """
+        INSERT OR REPLACE INTO roles
+        (user_id, role)
+        VALUES (?,?)
+        """,
+        (user_id, role)
+    )
+
+    db.commit()
+
+    await message.answer(
+        f"Роль {role} выдана пользователю {user_id}"
+    )
+
+
 async def main():
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
+    
