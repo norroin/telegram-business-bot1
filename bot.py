@@ -96,16 +96,15 @@ async def start(message: Message):
 
 @dp.message(Command("business"))
 async def business(message: Message):
-args = message.text.split(maxsplit=1)
+    args = message.text.split(maxsplit=1)
 
-```
-if len(args) != 2:
-    await message.answer(
-        "Пример:\n/business 15\nили\n/business Автосервис"
-    )
-    return
+    if len(args) != 2:
+        await message.answer(
+            "Пример:\n/business 15\nили\n/business Автосервис"
+        )
+        return
 
-search = args[1]
+    search = args[1]
 
 # Поиск по ID
 if search.isdigit():
@@ -926,4 +925,5 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
     
+
 
