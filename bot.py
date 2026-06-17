@@ -133,14 +133,14 @@ if search.isdigit():
     )
 
     if photo_id:
-        await message.answer_photo(photo_id, caption=text)
-    else:
-        await message.answer(text)
+    await message.answer_photo(photo_id, caption=text)
+else:
+    await message.answer(text)
 
-    return
+return
 
-    # Поиск по названию
-    cur.execute(
+# Поиск по названию
+cur.execute(
     """
     SELECT id, name
     FROM businesses
@@ -148,22 +148,22 @@ if search.isdigit():
     ORDER BY name
     """,
     (f"%{search}%",)
-    )
+)
 
-    name_rows = cur.fetchall()
+name_rows = cur.fetchall()
 
-if condition:
+# Если нашли по названию
+if name_rows:
+    text = "🔎 Найдено по названию:\n\n"
 
-text = "🔎 Найдено по названию:\n\n"
-    
     for business_id, name in name_rows:
         text += f"🆔 {business_id} | {name}\n"
 
     await message.answer(text)
     return
 
-    # Поиск по категории
-    cur.execute(
+# Поиск по категории
+cur.execute(
     """
     SELECT id, name
     FROM businesses
@@ -171,12 +171,11 @@ text = "🔎 Найдено по названию:\n\n"
     ORDER BY name
     """,
     (search,)
-    )
+)
 
-    rows = cur.fetchall()
+rows = cur.fetchall()
 
-    if rows:
-        
+if rows:
     text = f"📂 Категория: {search}\n\n"
 
     for business_id, name in rows:
