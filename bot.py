@@ -80,6 +80,36 @@ async def start(message: Message):
 async def business(message: Message):
     args = message.text.split()
 
+    if len(args) != 2:
+        await message.answer("Пример: /business 1001")
+        return
+
+    cur.execute(
+        "SELECT name, owner, location, photo_id, category FROM businesses WHERE id=?",
+        (args[1],)
+    )
+
+    row = cur.fetchone()
+
+    if not row:
+        await message.answer("Бизнес не найден.")
+        return
+
+    name, owner, location, photo_id, category = row
+
+    text = (
+        f"🏢 Полное название: {name}\n\n"
+        f"📂 Категория: {category or 'Не указана'}\n\n"
+        f"👤 Владелец: {owner}\n\n"
+        f"📍 Местоположение:\n{location}"
+    )
+
+    if photo_id:
+        await message.answer_photo(photo_id, caption=text)
+    else:
+        await message.answer(text)
+
+
 @dp.message(Command("bizlist"))
 async def bizlist(message: Message):
     cur.execute(
@@ -98,33 +128,6 @@ async def bizlist(message: Message):
         text += f"{business_id} - {name}\n"
 
     await message.answer(text)
-
-    if len(args) != 2:
-        await message.answer("Пример: /business 1001")
-        return
-
-    cur.execute(
-        "SELECT SELECT name, owner, location, photo_id, category FROM businesses WHERE id=?",
-        (args[1],)
-    )
-    row = cur.fetchone()
-
-    if not row:
-        await message.answer("Бизнес не найден.")
-        return
-
-    name, owner, location, photo_id, category = row
-
-   text = (
-    f"🏢 Полное название: {name}\n\n"
-    f"📂 Категория: {category or 'Не указана'}\n\n"
-    f"👤 Владелец: {owner}\n\n"
-    f"📍 Местоположение:\n{location}"
-)
-    if photo_id:
-        await message.answer_photo(photo_id, caption=text)
-    else:
-        await message.answer(text)
 
 @dp.message(Command("admin"))
 async def admin(message: Message):
