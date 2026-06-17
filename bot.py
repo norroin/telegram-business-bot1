@@ -187,8 +187,6 @@ if rows:
 await message.answer(
     "Бизнес или категория не найдены."
 )
-```
-
 
 @dp.message(Command("bizlist"))
 async def bizlist(message: Message):
