@@ -153,6 +153,7 @@ if search.isdigit():
     name_rows = cur.fetchall()
 
     if name_rows:
+        
     text = "🔎 Найдено по названию:\n\n"
 
     for business_id, name in name_rows:
@@ -175,6 +176,7 @@ if search.isdigit():
     rows = cur.fetchall()
 
     if rows:
+        
     text = f"📂 Категория: {search}\n\n"
 
     for business_id, name in rows:
@@ -196,6 +198,7 @@ async def bizlist(message: Message):
     rows = cur.fetchall()
 
     if not rows:
+        
         await message.answer("Список бизнесов пуст.")
         return
 
