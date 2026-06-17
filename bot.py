@@ -17,6 +17,16 @@ dp = Dispatcher()
 
 db = sqlite3.connect("database.db")
 cur = db.cursor()
+
+cur.execute("""
+CREATE TABLE IF NOT EXISTS roles(
+    user_id INTEGER PRIMARY KEY,
+    role INTEGER DEFAULT 0
+)
+""")
+
+db.commit()
+
 def get_role(user_id):
     row = cur.execute(
         "SELECT role FROM roles WHERE user_id=?",
