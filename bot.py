@@ -98,95 +98,93 @@ async def start(message: Message):
 async def business(message: Message):
     args = message.text.split(maxsplit=1)
 
-if len(args) != 2:
-    await message.answer(
-        "Пример:\n/business 15\nили\n/business Автосервис"
-    )
-    return
+    if len(args) != 2:
+        await message.answer(
+            "Пример:\n/business 15\nили\n/business Автосервис"
+        )
+        return
 
-search = args[1]
+    search = args[1]
 
-# Поиск по ID
-if search.isdigit():
+    # Поиск по ID
+    if search.isdigit():
+        cur.execute(
+            """
+            SELECT name, owner, location, photo_id, category
+            FROM businesses
+            WHERE id=?
+            """,
+            (search,)
+        )
+
+        row = cur.fetchone()
+
+        if not row:
+            await message.answer("Бизнес не найден.")
+            return
+
+        name, owner, location, photo_id, category = row
+
+        text = (
+            f"🏢 Полное название: {name}\n\n"
+            f"📂 Категория: {category or 'Не указана'}\n\n"
+            f"👤 Владелец: {owner}\n\n"
+            f"📍 Местоположение:\n{location}"
+        )
+
+        if photo_id:
+            await message.answer_photo(photo_id, caption=text)
+        else:
+            await message.answer(text)
+
+        return
+
+    # Поиск по названию
     cur.execute(
         """
-        SELECT name, owner, location, photo_id, category
+        SELECT id, name
         FROM businesses
-        WHERE id=?
+        WHERE name LIKE ?
+        ORDER BY name
+        """,
+        (f"%{search}%",)
+    )
+
+    name_rows = cur.fetchall()
+
+    if name_rows:
+        text = "🔎 Найдено по названию:\n\n"
+
+        for business_id, name in name_rows:
+            text += f"🆔 {business_id} | {name}\n"
+
+        await message.answer(text)
+        return
+
+    # Поиск по категории
+    cur.execute(
+        """
+        SELECT id, name
+        FROM businesses
+        WHERE category=?
+        ORDER BY name
         """,
         (search,)
     )
 
-    row = cur.fetchone()
+    rows = cur.fetchall()
 
-    if not row:
-        await message.answer("Бизнес не найден.")
+    if rows:
+        text = f"📂 Категория: {search}\n\n"
+
+        for business_id, name in rows:
+            text += f"🆔 {business_id} | {name}\n"
+
+        await message.answer(text)
         return
 
-    name, owner, location, photo_id, category = row
-
-    text = (
-        f"🏢 Полное название: {name}\n\n"
-        f"📂 Категория: {category or 'Не указана'}\n\n"
-        f"👤 Владелец: {owner}\n\n"
-        f"📍 Местоположение:\n{location}"
-    )
-
-    if photo_id:
-        await message.answer_photo(photo_id, caption=text)
-else:
-    await message.answer(text)
-
-return
-
-# Поиск по названию
-cur.execute(
-    """
-    SELECT id, name
-    FROM businesses
-    WHERE name LIKE ?
-    ORDER BY name
-    """,
-    (f"%{search}%",)
-)
-
-name_rows = cur.fetchall()
-
-# Если нашли по названию
-if name_rows:
-    text = "🔎 Найдено по названию:\n\n"
-
-    for business_id, name in name_rows:
-        text += f"🆔 {business_id} | {name}\n"
-
-    await message.answer(text)
-    return
-
-# Поиск по категории
-cur.execute(
-    """
-    SELECT id, name
-    FROM businesses
-    WHERE category=?
-    ORDER BY name
-    """,
-    (search,)
-)
-
-rows = cur.fetchall()
-
-if rows:
-    text = f"📂 Категория: {search}\n\n"
-
-    for business_id, name in rows:
-        text += f"🆔 {business_id} | {name}\n"
-
-    await message.answer(text)
-    return
-
-    await message.answer(
-    "Бизнес или категория не найдены."
-)
+    # Ничего не найдено
+    await message.answer("Бизнес или категория не найдены.")
 
 @dp.message(Command("bizlist"))
 async def bizlist(message: Message):
