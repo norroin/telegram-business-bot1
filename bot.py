@@ -378,9 +378,64 @@ async def delcbiz(message: Message):
         "Категория удалена."
     )
 
+@dp.message(Command("nbiz"))
+async def nbiz(message: Message):
+    if not is_creator(message.from_user.id):
+        await message.answer("Недостаточно прав.")
+        return
+
+    args = message.text.split(maxsplit=2)
+
+    if len(args) < 3:
+        await message.answer(
+            "Пример:\n/nbiz 15 Новое название"
+        )
+        return
+
+    business_id = args[1]
+    new_name = args[2]
+
+    cur.execute(
+        "UPDATE businesses SET name=? WHERE id=?",
+        (new_name, business_id)
+    )
+
+    db.commit()
+
+    await message.answer(
+        "Название бизнеса изменено."
+    )
+
+@dp.message(Command("lbiz"))
+async def lbiz(message: Message):
+    if not is_creator(message.from_user.id):
+        await message.answer("Недостаточно прав.")
+        return
+
+    args = message.text.split(maxsplit=2)
+
+    if len(args) < 3:
+        await message.answer(
+            "Пример:\n/lbiz 15 Новый адрес"
+        )
+        return
+
+    business_id = args[1]
+    new_location = args[2]
+
+    cur.execute(
+        "UPDATE businesses SET location=? WHERE id=?",
+        (new_location, business_id)
+    )
+
+    db.commit()
+
+    await message.answer(
+        "Адрес бизнеса изменён."
+    )
+
 async def main():
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
-
