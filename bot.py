@@ -72,6 +72,25 @@ async def start(message: Message):
 async def business(message: Message):
     args = message.text.split()
 
+@dp.message(Command("bizlist"))
+async def bizlist(message: Message):
+    cur.execute(
+        "SELECT id, name FROM businesses ORDER BY id"
+    )
+
+    rows = cur.fetchall()
+
+    if not rows:
+        await message.answer("Список бизнесов пуст.")
+        return
+
+    text = "📋 Список бизнесов\n\n"
+
+    for business_id, name in rows:
+        text += f"{business_id} - {name}\n"
+
+    await message.answer(text)
+
     if len(args) != 2:
         await message.answer("Пример: /business 1001")
         return
@@ -284,6 +303,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
     
     
