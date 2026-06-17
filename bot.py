@@ -133,7 +133,7 @@ if search.isdigit():
     )
 
     if photo_id:
-    await message.answer_photo(photo_id, caption=text)
+        await message.answer_photo(photo_id, caption=text)
 else:
     await message.answer(text)
 
