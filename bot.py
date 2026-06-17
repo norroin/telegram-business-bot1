@@ -96,7 +96,7 @@ async def start(message: Message):
 
 @dp.message(Command("business"))
 async def business(message: Message):
-args = message.text.split(maxsplit=1)
+    args = message.text.split(maxsplit=1)
 
     if len(args) != 2:
     await message.answer(
