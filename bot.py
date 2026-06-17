@@ -78,7 +78,20 @@ class ChangePhotoCmd(StatesGroup):
 
 @dp.message(Command("start"))
 async def start(message: Message):
-    await message.answer("Команда поиска:\n/business ID")
+
+    kb = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="📋 Бизнесы")],
+            [KeyboardButton(text="📂 Категории")],
+            [KeyboardButton(text="ℹ️ Помощь")]
+        ],
+        resize_keyboard=True
+    )
+
+    await message.answer(
+        "Добро пожаловать!",
+        reply_markup=kb
+    )
 
 @dp.message(Command("business"))
 async def business(message: Message):
@@ -720,11 +733,94 @@ async def userrole(message: Message):
         f"Роль: {roles.get(role, 'Неизвестно')}"
     )
 
+@dp.message(F.text == "📋 Бизнесы")
+async def menu_bizlist(message: Message):
+    cur.execute(
+        "SELECT id, name FROM businesses ORDER BY id"
+    )
+
+    rows = cur.fetchall()
+
+    if not rows:
+        await message.answer("Список бизнесов пуст.")
+        return
+
+    text = "📋 Список бизнесов\n\n"
+
+    for business_id, name in rows:
+        text += f"🆔 {business_id} | {name}\n"
+
+    await message.answer(text)
+
+@dp.message(F.text == "📂 Категории")
+async def menu_categories(message: Message):
+
+    cur.execute(
+        """
+        SELECT DISTINCT category
+        FROM businesses
+        WHERE category IS NOT NULL
+        AND category != ''
+        ORDER BY category
+        """
+    )
+
+    rows = cur.fetchall()
+
+    if not rows:
+        await message.answer(
+            "Категории отсутствуют."
+        )
+        return
+
+    text = "📂 Категории\n\n"
+
+    for (category,) in rows:
+        text += f"• {category}\n"
+
+    await message.answer(text)
+
+@dp.message(F.text == "ℹ️ Помощь")
+async def menu_help(message: Message):
+
+    role = get_role(message.from_user.id)
+
+    text = (
+        "📖 Справка\n\n"
+        "/business ID\n"
+        "/business Категория\n"
+        "/bizlist\n"
+        "/categories\n"
+        "/role\n"
+        "/support\n"
+    )
+
+    if role >= 1:
+        text += (
+            "\n✏️ Редактор:\n"
+            "/vbiz\n"
+            "/fbiz\n"
+            "/cbiz\n"
+            "/delcbiz\n"
+        )
+
+    if role >= 2:
+        text += (
+            "\n👑 Создатель:\n"
+            "/nbiz\n"
+            "/lbiz\n"
+            "/delbiz\n"
+            "/userrole\n"
+        )
+
+    await message.answer(text)
+
 async def main():
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
+
     
     
 
