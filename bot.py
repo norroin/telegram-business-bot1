@@ -75,6 +75,7 @@ class UploadPhoto(StatesGroup):
 
 class ChangePhotoCmd(StatesGroup):
     business_id = State()
+    photo = State()
 
 @dp.message(Command("start"))
 async def start(message: Message):
@@ -579,8 +580,12 @@ async def vbiz(message: Message):
 
 @dp.message(Command("fbiz"))
 async def fbiz(message: Message, state: FSMContext):
+
     if not is_editor(message.from_user.id):
         await message.answer("Недостаточно прав.")
+        return
+
+    if not message.text:
         return
 
     args = message.text.split()
@@ -592,14 +597,13 @@ async def fbiz(message: Message, state: FSMContext):
         return
 
     await state.update_data(id=args[1])
-    await state.set_state(ChangePhotoCmd.business_id)
+    await state.set_state(ChangePhotoCmd.photo)
 
     await message.answer(
         "Отправьте новую фотографию."
     )
 
-
-@dp.message(ChangePhotoCmd.business_id, F.photo)
+@dp.message(ChangePhotoCmd.photo, F.photo)
 async def fbiz_save(message: Message, state: FSMContext):
     data = await state.get_data()
 
