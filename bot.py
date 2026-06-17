@@ -82,18 +82,74 @@ async def start(message: Message):
 
 @dp.message(Command("business"))
 async def business(message: Message):
-    args = message.text.split()
+   args = message.text.split(maxsplit=1)
 
-    if len(args) != 2:
-        await message.answer("Пример: /business 1001")
-        return
+if len(args) != 2:
+    await message.answer(
+        "Пример:\n/business 15\nили\n/business Автосервис"
+    )
+    return
+
+search = args[1]
+
+  if search.isdigit():
 
     cur.execute(
-        "SELECT name, owner, location, photo_id, category FROM businesses WHERE id=?",
-        (args[1],)
+        """
+        SELECT name, owner, location, photo_id, category
+        FROM businesses
+        WHERE id=?
+        """,
+        (search,)
     )
 
     row = cur.fetchone()
+
+    if not row:
+        await message.answer("Бизнес не найден.")
+        return
+
+    name, owner, location, photo_id, category = row
+
+    text = (
+        f"🏢 Полное название: {name}\n\n"
+        f"📂 Категория: {category or 'Не указана'}\n\n"
+        f"👤 Владелец: {owner}\n\n"
+        f"📍 Местоположение:\n{location}"
+    )
+
+    if photo_id:
+        await message.answer_photo(photo_id, caption=text)
+    else:
+        await message.answer(text)
+
+    return
+
+
+cur.execute(
+    """
+    SELECT id, name
+    FROM businesses
+    WHERE category=?
+    ORDER BY name
+    """,
+    (search,)
+)
+
+rows = cur.fetchall()
+
+if not rows:
+    await message.answer(
+        f"Категория '{search}' не найдена."
+    )
+    return
+
+text = f"📂 Категория: {search}\n\n"
+
+for business_id, name in rows:
+    text += f"🆔 {business_id} - {name}\n"
+
+await message.answer(text)
 
     if not row:
         await message.answer("Бизнес не найден.")
@@ -538,4 +594,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-    
+
