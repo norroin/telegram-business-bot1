@@ -58,6 +58,7 @@ class AddBusiness(StatesGroup):
     id = State()
     name = State()
     owner = State()
+    category = State()
     location = State()
 
 class ChangeOwner(StatesGroup):
@@ -178,17 +179,36 @@ async def add_id(message: Message, state: FSMContext):
 @dp.message(AddBusiness.owner)
 async def add_owner(message: Message, state: FSMContext):
     await state.update_data(owner=message.text)
+    await state.set_state(AddBusiness.category)
+    await message.answer("Введите категорию")
+
+
+@dp.message(AddBusiness.category)
+async def add_category(message: Message, state: FSMContext):
+    await state.update_data(category=message.text)
     await state.set_state(AddBusiness.location)
     await message.answer("Введите адрес")
+
 
 @dp.message(AddBusiness.location)
 async def add_location(message: Message, state: FSMContext):
     data = await state.get_data()
 
     cur.execute(
-        "INSERT INTO businesses(id,name,owner,location) VALUES(?,?,?,?)",
-        (data["id"], data["name"], data["owner"], message.text)
+        """
+        INSERT INTO businesses
+        (id, name, owner, category, location)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (
+            data["id"],
+            data["name"],
+            data["owner"],
+            data["category"],
+            message.text
+        )
     )
+
     db.commit()
 
     await state.clear()
@@ -363,4 +383,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-    
+
