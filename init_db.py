@@ -12,7 +12,12 @@ CREATE TABLE IF NOT EXISTS businesses(
     photo_id TEXT
 )
 """)
-
+cur.execute("""
+CREATE TABLE IF NOT EXISTS roles(
+    user_id INTEGER PRIMARY KEY,
+    role INTEGER DEFAULT 0
+)
+""")
 db.commit()
 db.close()
 print("database.db created")
