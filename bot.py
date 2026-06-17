@@ -663,10 +663,10 @@ async def support(message: Message):
     if role >= 1:
         text += (
             "\n✏️ Редактор:\n"
-            "/vbiz ID Новый владелец\n"
-            "/fbiz ID\n"
-            "/cbiz ID Категория\n"
-            "/delcbiz ID\n"
+            "/vbiz ID Новый владелец - изменение владельца\n"
+            "/fbiz ID Фотография - изменение фотографии\n"
+            "/cbiz ID Категория - изменение категории\n"
+            "/delcbiz ID - удаление категории\n"
         )
 
     if role >= 2:
@@ -674,8 +674,9 @@ async def support(message: Message):
             "\n👑 Создатель:\n"
             "/nbiz ID Новое название\n"
             "/lbiz ID Новый адрес\n"
-            "/delbiz ID\n"
-            "/userrole ID\n"
+            "/delbiz ID - удалить бизнес\n"
+            "/userrole ID - статус роли\n"
+            "/addbiz ID | Автоцентр Премиум | Иван Петров | Москва | Автосервис - создание бизнеса\n"
         )
 
     await message.answer(text)
@@ -882,4 +883,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+    
     
