@@ -98,6 +98,7 @@ async def start(message: Message):
 async def business(message: Message):
 args = message.text.split(maxsplit=1)
 
+```
 if len(args) != 2:
     await message.answer(
         "Пример:\n/business 15\nили\n/business Автосервис"
@@ -187,6 +188,8 @@ if rows:
 await message.answer(
     "Бизнес или категория не найдены."
 )
+```
+
 
 @dp.message(Command("bizlist"))
 async def bizlist(message: Message):
@@ -922,4 +925,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+    
 
