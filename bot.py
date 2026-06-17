@@ -156,13 +156,53 @@ async def business(message: Message):
             f"Категория '{search}' не найдена."
         )
         return
+# Поиск по названию
+cur.execute(
+    """
+    SELECT id, name
+    FROM businesses
+    WHERE name LIKE ?
+    ORDER BY name
+    """,
+    (f"%{search}%",)
+)
 
+name_rows = cur.fetchall()
+
+if name_rows:
+    text = "🔎 Найдено по названию:\n\n"
+
+    for business_id, name in name_rows:
+        text += f"🆔 {business_id} | {name}\n"
+
+    await message.answer(text)
+    return
+
+cur.execute(
+    """
+    SELECT id, name
+    FROM businesses
+    WHERE category=?
+    ORDER BY name
+    """,
+    (search,)
+)
+
+rows = cur.fetchall()
+
+if rows:
     text = f"📂 Категория: {search}\n\n"
 
     for business_id, name in rows:
-        text += f"🆔 {business_id} - {name}\n"
+        text += f"🆔 {business_id} | {name}\n"
 
     await message.answer(text)
+    return
+
+
+await message.answer(
+    "Бизнес или категория не найдены."
+)
 
 @dp.message(Command("bizlist"))
 async def bizlist(message: Message):
@@ -585,9 +625,6 @@ async def fbiz(message: Message, state: FSMContext):
         await message.answer("Недостаточно прав.")
         return
 
-    if not message.text:
-        return
-
     args = message.text.split()
 
     if len(args) != 2:
@@ -596,7 +633,21 @@ async def fbiz(message: Message, state: FSMContext):
         )
         return
 
-    await state.update_data(id=args[1])
+    business_id = args[1]
+
+    cur.execute(
+        "SELECT id FROM businesses WHERE id=?",
+        (business_id,)
+    )
+
+    if not cur.fetchone():
+        await message.answer(
+            "Бизнес не найден."
+        )
+        return
+
+    await state.update_data(id=business_id)
+
     await state.set_state(ChangePhotoCmd.photo)
 
     await message.answer(
@@ -887,5 +938,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-    
-    
+
