@@ -159,7 +159,7 @@ if name_rows:
     for business_id, name in name_rows:
         text += f"🆔 {business_id} | {name}\n"
 
-    await message.answer(text)
+     await message.answer(text)
     return
 
 # Поиск по категории
