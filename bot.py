@@ -106,6 +106,21 @@ async def admin(message: Message):
 
     await message.answer("Админ-панель", reply_markup=kb)
 
+@dp.message(F.text == "➕ Добавить бизнес")
+async def add_start(message: Message, state: FSMContext):
+    if message.from_user.id not in ADMINS:
+        return
+
+    await state.set_state(AddBusiness.id)
+    await message.answer("Введите ID бизнеса")
+
+
+@dp.message(AddBusiness.name)
+async def add_name(message: Message, state: FSMContext):
+    await state.update_data(name=message.text)
+    await state.set_state(AddBusiness.owner)
+    await message.answer("Введите владельца")
+
 @dp.message(AddBusiness.id)
 async def add_id(message: Message, state: FSMContext):
     try:
@@ -259,5 +274,6 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
     
     
