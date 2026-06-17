@@ -152,10 +152,10 @@ if search.isdigit():
 
     name_rows = cur.fetchall()
 
-    if name_rows:
-        
-    text = "🔎 Найдено по названию:\n\n"
+if condition:
 
+text = "🔎 Найдено по названию:\n\n"
+    
     for business_id, name in name_rows:
         text += f"🆔 {business_id} | {name}\n"
 
