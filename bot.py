@@ -73,6 +73,9 @@ class UploadPhoto(StatesGroup):
     business_id = State()
     photo = State()
 
+class ChangePhotoCmd(StatesGroup):
+    business_id = State()
+
 @dp.message(Command("start"))
 async def start(message: Message):
     await message.answer("Команда поиска:\n/business ID")
@@ -434,8 +437,105 @@ async def lbiz(message: Message):
         "Адрес бизнеса изменён."
     )
 
+@dp.message(Command("delbiz"))
+async def delbiz(message: Message):
+    if not is_creator(message.from_user.id):
+        await message.answer("Недостаточно прав.")
+        return
+
+    args = message.text.split()
+
+    if len(args) != 2:
+        await message.answer(
+            "Пример:\n/delbiz 15"
+        )
+        return
+
+    business_id = args[1]
+
+    cur.execute(
+        "DELETE FROM businesses WHERE id=?",
+        (business_id,)
+    )
+
+    db.commit()
+
+    await message.answer(
+        "Бизнес удалён."
+    )
+
+@dp.message(Command("vbiz"))
+async def vbiz(message: Message):
+    if not is_editor(message.from_user.id):
+        await message.answer("Недостаточно прав.")
+        return
+
+    args = message.text.split(maxsplit=2)
+
+    if len(args) < 3:
+        await message.answer(
+            "Пример:\n/vbiz 15 Иван Петров"
+        )
+        return
+
+    business_id = args[1]
+    new_owner = args[2]
+
+    cur.execute(
+        "UPDATE businesses SET owner=? WHERE id=?",
+        (new_owner, business_id)
+    )
+
+    db.commit()
+
+    await message.answer(
+        "Владелец бизнеса изменён."
+    )
+
+@dp.message(Command("fbiz"))
+async def fbiz(message: Message, state: FSMContext):
+    if not is_editor(message.from_user.id):
+        await message.answer("Недостаточно прав.")
+        return
+
+    args = message.text.split()
+
+    if len(args) != 2:
+        await message.answer(
+            "Пример:\n/fbiz 15"
+        )
+        return
+
+    await state.update_data(id=args[1])
+    await state.set_state(ChangePhotoCmd.business_id)
+
+    await message.answer(
+        "Отправьте новую фотографию."
+    )
+
+
+@dp.message(ChangePhotoCmd.business_id, F.photo)
+async def fbiz_save(message: Message, state: FSMContext):
+    data = await state.get_data()
+
+    photo_id = message.photo[-1].file_id
+
+    cur.execute(
+        "UPDATE businesses SET photo_id=? WHERE id=?",
+        (photo_id, data["id"])
+    )
+
+    db.commit()
+
+    await state.clear()
+
+    await message.answer(
+        "Фотография бизнеса обновлена."
+    )
+
 async def main():
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
+    
