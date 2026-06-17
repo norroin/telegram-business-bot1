@@ -18,6 +18,14 @@ dp = Dispatcher()
 db = sqlite3.connect("database.db")
 cur = db.cursor()
 
+try:
+    cur.execute(
+        "ALTER TABLE businesses ADD COLUMN category TEXT"
+    )
+    db.commit()
+except:
+    pass
+
 cur.execute("""
 CREATE TABLE IF NOT EXISTS roles(
     user_id INTEGER PRIMARY KEY,
@@ -96,7 +104,7 @@ async def bizlist(message: Message):
         return
 
     cur.execute(
-        "SELECT name, owner, location, photo_id FROM businesses WHERE id=?",
+        "SELECT SELECT name, owner, location, photo_id, category FROM businesses WHERE id=?",
         (args[1],)
     )
     row = cur.fetchone()
@@ -105,14 +113,14 @@ async def bizlist(message: Message):
         await message.answer("Бизнес не найден.")
         return
 
-    name, owner, location, photo_id = row
+    name, owner, location, photo_id, category = row
 
-    text = (
-        f"🏢 Полное название: {name}\n\n"
-        f"👤 Владелец: {owner}\n\n"
-        f"📍 Местоположение:\n{location}"
-    )
-
+   text = (
+    f"🏢 Полное название: {name}\n\n"
+    f"📂 Категория: {category or 'Не указана'}\n\n"
+    f"👤 Владелец: {owner}\n\n"
+    f"📍 Местоположение:\n{location}"
+)
     if photo_id:
         await message.answer_photo(photo_id, caption=text)
     else:
@@ -297,13 +305,59 @@ async def set_role(message: Message):
         f"Роль {role} выдана пользователю {user_id}"
     )
 
+@dp.message(Command("cbiz"))
+async def cbiz(message: Message):
+    if not is_editor(message.from_user.id):
+        await message.answer("Недостаточно прав.")
+        return
+
+    args = message.text.split(maxsplit=2)
+
+    if len(args) < 3:
+        await message.answer(
+            "Пример:\n/cbiz 15 Автосервис"
+        )
+        return
+
+    business_id = args[1]
+    category = args[2]
+
+    cur.execute(
+        "UPDATE businesses SET category=? WHERE id=?",
+        (category, business_id)
+    )
+    db.commit()
+
+    await message.answer("Категория сохранена.")
+
+@dp.message(Command("delcbiz"))
+async def delcbiz(message: Message):
+    if not is_editor(message.from_user.id):
+        await message.answer("Недостаточно прав.")
+        return
+
+    args = message.text.split()
+
+    if len(args) != 2:
+        await message.answer(
+            "Пример:\n/delcbiz 15"
+        )
+        return
+
+    cur.execute(
+        "UPDATE businesses SET category=NULL WHERE id=?",
+        (args[1],)
+    )
+
+    db.commit()
+
+    await message.answer(
+        "Категория удалена."
+    )
 
 async def main():
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-
-    
     
