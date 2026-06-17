@@ -435,9 +435,13 @@ async def nbiz(message: Message):
     new_name = args[2]
 
     cur.execute(
-        "UPDATE businesses SET name=? WHERE id=?",
-        (new_name, business_id)
-    )
+    "SELECT id FROM businesses WHERE id=?",
+    (business_id,)
+     )
+
+if not cur.fetchone():
+    await message.answer("Бизнес не найден.")
+    return
 
     db.commit()
 
@@ -463,11 +467,13 @@ async def lbiz(message: Message):
     new_location = args[2]
 
     cur.execute(
-        "UPDATE businesses SET location=? WHERE id=?",
-        (new_location, business_id)
+    "SELECT id FROM businesses WHERE id=?",
+    (business_id,)
     )
 
-    db.commit()
+    if not cur.fetchone():
+    await message.answer("Бизнес не найден.")
+    return
 
     await message.answer(
         "Адрес бизнеса изменён."
@@ -490,15 +496,33 @@ async def delbiz(message: Message):
     business_id = args[1]
 
     cur.execute(
-        "DELETE FROM businesses WHERE id=?",
-        (business_id,)
+    "SELECT id FROM businesses WHERE id=?",
+    (business_id,)
     )
 
-    db.commit()
+if not cur.fetchone():
+    await message.answer("Бизнес не найден.")
+    return
 
-    await message.answer(
-        "Бизнес удалён."
-    )
+cur.execute(
+    "SELECT id FROM businesses WHERE id=?",
+    (business_id,)
+)
+
+if not cur.fetchone():
+    await message.answer("Бизнес не найден.")
+    return
+
+cur.execute(
+    "DELETE FROM businesses WHERE id=?",
+    (business_id,)
+)
+
+db.commit()
+
+await message.answer(
+    "Бизнес удалён."
+)
 
 @dp.message(Command("vbiz"))
 async def vbiz(message: Message):
@@ -569,9 +593,35 @@ async def fbiz_save(message: Message, state: FSMContext):
         "Фотография бизнеса обновлена."
     )
 
+@dp.message(Command("categories"))
+async def categories(message: Message):
+    cur.execute(
+        """
+        SELECT DISTINCT category
+        FROM businesses
+        WHERE category IS NOT NULL
+        AND category != ''
+        ORDER BY category
+        """
+    )
+
+    rows = cur.fetchall()
+
+    if not rows:
+        await message.answer("Категории отсутствуют.")
+        return
+
+    text = "📂 Категории\n\n"
+
+    for (category,) in rows:
+        text += f"• {category}\n"
+
+    await message.answer(text)
+
 async def main():
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
+    
 
