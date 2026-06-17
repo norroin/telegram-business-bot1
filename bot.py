@@ -98,17 +98,16 @@ async def start(message: Message):
 async def business(message: Message):
     args = message.text.split(maxsplit=1)
 
-    if len(args) != 2:
-        await message.answer(
+if len(args) != 2:
+    await message.answer(
         "Пример:\n/business 15\nили\n/business Автосервис"
     )
     return
 
-    search = args[1]
+search = args[1]
 
-    # Поиск по ID
-    if search.isdigit():
-
+# Поиск по ID
+if search.isdigit():
     cur.execute(
         """
         SELECT name, owner, location, photo_id, category
