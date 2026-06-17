@@ -99,7 +99,7 @@ async def business(message: Message):
     args = message.text.split(maxsplit=1)
 
     if len(args) != 2:
-    await message.answer(
+        await message.answer(
         "Пример:\n/business 15\nили\n/business Автосервис"
     )
     return
