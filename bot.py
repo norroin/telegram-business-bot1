@@ -78,20 +78,7 @@ class ChangePhotoCmd(StatesGroup):
 
 @dp.message(Command("start"))
 async def start(message: Message):
-
-    kb = ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="📋 Бизнесы")],
-            [KeyboardButton(text="📂 Категории")],
-            [KeyboardButton(text="ℹ️ Помощь")]
-        ],
-        resize_keyboard=True
-    )
-
-    await message.answer(
-        "Добро пожаловать!",
-        reply_markup=kb
-    )
+    await message.answer("Команда поиска:\n/business ID")
 
 @dp.message(Command("business"))
 async def business(message: Message):
@@ -643,184 +630,74 @@ async def categories(message: Message):
 
     await message.answer(text)
 
-@dp.message(Command("support"))
-async def support(message: Message):
-
-    role = get_role(message.from_user.id)
-
-    text = (
-        "📖 Справка по командам\n\n"
-
-        "👤 Пользователь:\n"
-        "/business ID - информация о бизнесе\n"
-        "/business Категория - поиск по категории\n"
-        "/bizlist - список бизнесов\n"
-        "/categories - список категорий\n"
-        "/role - моя роль\n"
-        "/support - справка\n"
-    )
-
-    if role >= 1:
-        text += (
-            "\n✏️ Редактор:\n"
-            "/vbiz ID Новый владелец\n"
-            "/fbiz ID\n"
-            "/cbiz ID Категория\n"
-            "/delcbiz ID\n"
-        )
-
-    if role >= 2:
-        text += (
-            "\n👑 Создатель:\n"
-            "/nbiz ID Новое название\n"
-            "/lbiz ID Новый адрес\n"
-            "/delbiz ID\n"
-            "/userrole ID\n"
-        )
-
-    await message.answer(text)
-
-@dp.message(Command("role"))
-async def role(message: Message):
-
-    role = get_role(message.from_user.id)
-
-    roles = {
-        0: "Пользователь",
-        1: "Редактор",
-        2: "Создатель"
-    }
-
-    await message.answer(
-        f"Ваша роль: {roles.get(role, 'Неизвестно')}"
-    )
-
-@dp.message(Command("userrole"))
-async def userrole(message: Message):
+@dp.message(Command("addbiz"))
+async def addbiz(message: Message):
 
     if not is_creator(message.from_user.id):
-        await message.answer(
-            "Недостаточно прав."
-        )
-        return
-
-    args = message.text.split()
-
-    if len(args) != 2:
-        await message.answer(
-            "Пример:\n/userrole 123456789"
-        )
+        await message.answer("Недостаточно прав.")
         return
 
     try:
-        user_id = int(args[1])
-    except ValueError:
+        data = message.text.replace("/addbiz", "", 1).strip()
+
+        parts = [x.strip() for x in data.split("|")]
+
+        if len(parts) != 5:
+            raise ValueError
+
+        business_id = int(parts[0])
+        name = parts[1]
+        owner = parts[2]
+        location = parts[3]
+        category = parts[4]
+
+    except:
         await message.answer(
-            "ID должен быть числом."
+            "Пример:\n"
+            "/addbiz 15 | Автоцентр Премиум | Иван Петров | Москва | Автосервис"
         )
         return
 
-    role = get_role(user_id)
+    cur.execute(
+        "SELECT id FROM businesses WHERE id=?",
+        (business_id,)
+    )
 
-    roles = {
-        0: "Пользователь",
-        1: "Редактор",
-        2: "Создатель"
-    }
+    if cur.fetchone():
+        await message.answer(
+            "Бизнес с таким ID уже существует."
+        )
+        return
+
+    cur.execute(
+        """
+        INSERT INTO businesses
+        (id, name, owner, location, category)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (
+            business_id,
+            name,
+            owner,
+            location,
+            category
+        )
+    )
+
+    db.commit()
 
     await message.answer(
-        f"ID: {user_id}\n"
-        f"Роль: {roles.get(role, 'Неизвестно')}"
+        f"✅ Бизнес создан.\n\n"
+        f"ID: {business_id}\n"
+        f"Название: {name}"
     )
-
-@dp.message(F.text == "📋 Бизнесы")
-async def menu_bizlist(message: Message):
-    cur.execute(
-        "SELECT id, name FROM businesses ORDER BY id"
-    )
-
-    rows = cur.fetchall()
-
-    if not rows:
-        await message.answer("Список бизнесов пуст.")
-        return
-
-    text = "📋 Список бизнесов\n\n"
-
-    for business_id, name in rows:
-        text += f"🆔 {business_id} | {name}\n"
-
-    await message.answer(text)
-
-@dp.message(F.text == "📂 Категории")
-async def menu_categories(message: Message):
-
-    cur.execute(
-        """
-        SELECT DISTINCT category
-        FROM businesses
-        WHERE category IS NOT NULL
-        AND category != ''
-        ORDER BY category
-        """
-    )
-
-    rows = cur.fetchall()
-
-    if not rows:
-        await message.answer(
-            "Категории отсутствуют."
-        )
-        return
-
-    text = "📂 Категории\n\n"
-
-    for (category,) in rows:
-        text += f"• {category}\n"
-
-    await message.answer(text)
-
-@dp.message(F.text == "ℹ️ Помощь")
-async def menu_help(message: Message):
-
-    role = get_role(message.from_user.id)
-
-    text = (
-        "📖 Справка\n\n"
-        "/business ID\n"
-        "/business Категория\n"
-        "/bizlist\n"
-        "/categories\n"
-        "/role\n"
-        "/support\n"
-    )
-
-    if role >= 1:
-        text += (
-            "\n✏️ Редактор:\n"
-            "/vbiz\n"
-            "/fbiz\n"
-            "/cbiz\n"
-            "/delcbiz\n"
-        )
-
-    if role >= 2:
-        text += (
-            "\n👑 Создатель:\n"
-            "/nbiz\n"
-            "/lbiz\n"
-            "/delbiz\n"
-            "/userrole\n"
-        )
-
-    await message.answer(text)
 
 async def main():
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
-
+    
     
     
 
