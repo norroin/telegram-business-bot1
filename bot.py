@@ -613,6 +613,11 @@ async def vbiz(message: Message):
 
     db.commit()
 
+    add_log(
+    message.from_user.id,
+    f"Изменил владельца бизнеса {business_id}"
+    )
+
     await message.answer(
         "Владелец бизнеса изменён."
     )
@@ -931,6 +936,38 @@ async def addbiz(message: Message):
         f"ID: {business_id}\n"
         f"Название: {name}"
     )
+
+@dp.message(Command("logs"))
+async def logs(message: Message):
+    if not is_creator(message.from_user.id):
+        await message.answer("Недостаточно прав.")
+        return
+
+    cur.execute(
+        """
+        SELECT user_id, action, created_at
+        FROM logs
+        ORDER BY id DESC
+        LIMIT 20
+        """
+    )
+
+    rows = cur.fetchall()
+
+    if not rows:
+        await message.answer("Логи пусты.")
+        return
+
+    text = "📜 Последние действия\n\n"
+
+    for user_id, action, created_at in rows:
+        text += (
+            f"👤 {user_id}\n"
+            f"📝 {action}\n"
+            f"🕒 {created_at}\n\n"
+        )
+
+    await message.answer(text)
 
 async def main():
     await dp.start_polling(bot)
