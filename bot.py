@@ -993,8 +993,13 @@ async def checkrole(message: Message):
 
 @dp.message(Command("cancel"))
 async def cancel(message: Message, state: FSMContext):
-    await state.clear()
-    await message.answer("Действие отменено.")
+    current = await state.get_state()
+
+    if current:
+        await state.clear()
+        await message.answer("Текущее действие отменено.")
+    else:
+        await message.answer("Нет активного действия.")
 
 async def main():
     await dp.start_polling(bot)
