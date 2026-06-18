@@ -18,13 +18,16 @@ dp = Dispatcher()
 db = sqlite3.connect("/data/database.db")
 cur = db.cursor()
 
-try:
-    cur.execute(
-        "ALTER TABLE businesses ADD COLUMN category TEXT"
-    )
-    db.commit()
-except:
-    pass
+cur.execute("""
+CREATE TABLE IF NOT EXISTS businesses(
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    owner TEXT NOT NULL,
+    location TEXT NOT NULL,
+    photo_id TEXT,
+    category TEXT
+)
+""")
 
 cur.execute("""
 CREATE TABLE IF NOT EXISTS roles(
@@ -1001,5 +1004,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-    
     
