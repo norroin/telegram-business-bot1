@@ -1,6 +1,6 @@
 import sqlite3
 
-db = sqlite3.connect("database.db")
+db = sqlite3.connect("/data/database.db")
 cur = db.cursor()
 
 cur.execute("""
@@ -29,3 +29,4 @@ CREATE TABLE IF NOT EXISTS logs(
 db.commit()
 db.close()
 print("database.db created")
+
