@@ -53,6 +53,16 @@ def is_editor(user_id):
 def is_creator(user_id):
     return get_role(user_id) >= 2
 
+def add_log(user_id, action):
+    cur.execute(
+        """
+        INSERT INTO logs(user_id, action)
+        VALUES(?, ?)
+        """,
+        (user_id, action)
+    )
+    db.commit()
+
 class AddBusiness(StatesGroup):
     id = State()
     name = State()
@@ -560,6 +570,10 @@ async def delbiz(message: Message):
 
     db.commit()
 
+add_log(
+    message.from_user.id,
+    f"Удалил бизнес {business_id}"
+)
     await message.answer(
         "Бизнес удалён."
     )
@@ -921,6 +935,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+    
 
 
 
