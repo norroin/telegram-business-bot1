@@ -246,6 +246,17 @@ async def admin(message: Message):
 
     await message.answer("Админ-панель", reply_markup=kb)
 
+
+@dp.message(Command("cancel"))
+async def cancel(message: Message, state: FSMContext):
+    current = await state.get_state()
+
+    if current:
+        await state.clear()
+        await message.answer("Текущее действие отменено.")
+    else:
+        await message.answer("Нет активного действия.")
+
 @dp.message(F.text == "➕ Добавить бизнес")
 async def add_start(message: Message, state: FSMContext):
     if message.from_user.id not in ADMINS:
@@ -263,6 +274,10 @@ async def add_name(message: Message, state: FSMContext):
 
 @dp.message(AddBusiness.id)
 async def add_id(message: Message, state: FSMContext):
+
+    if message.text and message.text.startswith("/"):
+        return
+
     try:
         business_id = int(message.text)
     except ValueError:
@@ -278,7 +293,7 @@ async def add_id(message: Message, state: FSMContext):
 
     if cur.fetchone():
         await message.answer(
-            "Бизнес с таким ID уже существует.\nВведите другой ID."
+            "Бизнес с таким ID уже существует."
         )
         return
 
@@ -288,7 +303,7 @@ async def add_id(message: Message, state: FSMContext):
     await message.answer(
         "Введите название бизнеса"
     )
-    
+
 @dp.message(AddBusiness.owner)
 async def add_owner(message: Message, state: FSMContext):
     await state.update_data(owner=message.text)
@@ -1004,16 +1019,6 @@ async def checkrole(message: Message):
     rows = cur.fetchall()
 
     await message.answer(str(rows))
-
-@dp.message(Command("cancel"))
-async def cancel(message: Message, state: FSMContext):
-    current = await state.get_state()
-
-    if current:
-        await state.clear()
-        await message.answer("Текущее действие отменено.")
-    else:
-        await message.answer("Нет активного действия.")
 
 async def main():
     await dp.start_polling(bot)
