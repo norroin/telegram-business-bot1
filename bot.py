@@ -263,10 +263,6 @@ async def add_name(message: Message, state: FSMContext):
 
 @dp.message(AddBusiness.id)
 async def add_id(message: Message, state: FSMContext):
-
-    if message.text and message.text.startswith("/"):
-        return
-
     try:
         business_id = int(message.text)
     except ValueError:
@@ -275,9 +271,23 @@ async def add_id(message: Message, state: FSMContext):
         )
         return
 
+    cur.execute(
+        "SELECT id FROM businesses WHERE id=?",
+        (business_id,)
+    )
+
+    if cur.fetchone():
+        await message.answer(
+            "Бизнес с таким ID уже существует.\nВведите другой ID."
+        )
+        return
+
     await state.update_data(id=business_id)
     await state.set_state(AddBusiness.name)
-    await message.answer("Введите название бизнеса")
+
+    await message.answer(
+        "Введите название бизнеса"
+    )
     
 @dp.message(AddBusiness.owner)
 async def add_owner(message: Message, state: FSMContext):
