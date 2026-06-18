@@ -15,7 +15,7 @@ ADMINS = [5639087435]
 bot = Bot(TOKEN)
 dp = Dispatcher()
 
-db = sqlite3.connect("/data/database.db")
+db = sqlite3.connect("database.db")
 cur = db.cursor()
 
 try:
