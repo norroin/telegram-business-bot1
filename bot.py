@@ -991,6 +991,11 @@ async def checkrole(message: Message):
 
     await message.answer(str(rows))
 
+@dp.message(Command("cancel"))
+async def cancel(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer("Действие отменено.")
+
 async def main():
     await dp.start_polling(bot)
 
