@@ -991,14 +991,6 @@ async def checkrole(message: Message):
 
     await message.answer(str(rows))
 
-@dp.message(Command("volume"))
-async def volume(message: Message):
-    import os
-
-    await message.answer(
-        f"/data существует: {os.path.exists('/data')}"
-    )
-
 async def main():
     await dp.start_polling(bot)
 
