@@ -18,6 +18,14 @@ CREATE TABLE IF NOT EXISTS roles(
     role INTEGER DEFAULT 0
 )
 """)
+cur.execute("""
+CREATE TABLE IF NOT EXISTS logs(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    action TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+""")
 db.commit()
 db.close()
 print("database.db created")
