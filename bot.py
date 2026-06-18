@@ -15,7 +15,7 @@ ADMINS = [5639087435]
 bot = Bot(TOKEN)
 dp = Dispatcher()
 
-db = sqlite3.connect("database.db")
+db = sqlite3.connect("/data/database.db")
 cur = db.cursor()
 
 try:
@@ -988,15 +988,13 @@ async def checkrole(message: Message):
 
     await message.answer(str(rows))
 
-@dp.message(Command("check"))
-async def checkrole(message: Message):
-    cur.execute(
-        "SELECT * FROM roles"
+@dp.message(Command("volume"))
+async def volume(message: Message):
+    import os
+
+    await message.answer(
+        f"/data существует: {os.path.exists('/data')}"
     )
-
-    rows = cur.fetchall()
-
-    await message.answer(str(rows))
 
 async def main():
     await dp.start_polling(bot)
