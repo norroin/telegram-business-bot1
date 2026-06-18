@@ -969,13 +969,19 @@ async def logs(message: Message):
 
     await message.answer(text)
 
+@dp.message(Command("checkrole"))
+async def checkrole(message: Message):
+    cur.execute(
+        "SELECT * FROM roles"
+    )
+
+    rows = cur.fetchall()
+
+    await message.answer(str(rows))
+
 async def main():
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
     
-    
-
-
-
