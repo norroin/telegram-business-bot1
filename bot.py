@@ -1,3 +1,4 @@
+
 import os
 import sqlite3
 import asyncio
@@ -570,10 +571,11 @@ async def delbiz(message: Message):
 
     db.commit()
 
-add_log(
-    message.from_user.id,
-    f"Удалил бизнес {business_id}"
-)
+    add_log(
+        message.from_user.id,
+        f"Удалил бизнес {business_id}"
+    )
+
     await message.answer(
         "Бизнес удалён."
     )
@@ -935,6 +937,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+    
     
 
 
