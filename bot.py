@@ -988,6 +988,16 @@ async def checkrole(message: Message):
 
     await message.answer(str(rows))
 
+@dp.message(Command("check"))
+async def checkrole(message: Message):
+    cur.execute(
+        "SELECT * FROM roles"
+    )
+
+    rows = cur.fetchall()
+
+    await message.answer(str(rows))
+
 async def main():
     await dp.start_polling(bot)
 
