@@ -1020,6 +1020,18 @@ async def checkrole(message: Message):
 
     await message.answer(str(rows))
 
+@dp.message(Command("resetfsm"))
+async def reset_fsm(message: Message, state: FSMContext):
+    if not is_editor(message.from_user.id):
+        await message.answer("Недостаточно прав.")
+        return
+
+    await state.clear()
+
+    await message.answer(
+        "FSM сброшен."
+    )
+
 async def main():
     await dp.start_polling(bot)
 
