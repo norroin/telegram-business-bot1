@@ -1032,6 +1032,12 @@ async def reset_fsm(message: Message, state: FSMContext):
         "FSM сброшен."
     )
 
+@dp.message(Command("jizze"))
+async def jizze(message: Message):
+    await message.answer(
+        "Джиззи уебок"
+    )
+
 async def main():
     await dp.start_polling(bot)
 
