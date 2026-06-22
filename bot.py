@@ -1065,9 +1065,24 @@ async def jizze(message: Message):
 async def biz(callback: CallbackQuery):
     await callback.answer()
 
-    await callback.message.answer(
-        "Список бизнесов..."
+    cur.execute(
+        "SELECT id, name FROM businesses ORDER BY id"
     )
+
+    rows = cur.fetchall()
+
+    if not rows:
+        await callback.message.answer(
+            "Список бизнесов пуст."
+        )
+        return
+
+    text = "📋 Список бизнесов\n\n"
+
+    for business_id, name in rows:
+        text += f"{business_id} - {name}\n"
+
+    await callback.message.answer(text)
 
 
 @dp.callback_query(F.data == "categories")
