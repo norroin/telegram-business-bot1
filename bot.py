@@ -50,6 +50,12 @@ CREATE TABLE IF NOT EXISTS logs(
 )
 """)
 
+cur.execute("""
+CREATE TABLE IF NOT EXISTS counters(
+    command TEXT PRIMARY KEY,
+    count INTEGER DEFAULT 0
+)
+""")
 db.commit()
 
 def get_role(user_id):
@@ -1045,10 +1051,34 @@ async def checkrole(message: Message):
 
 @dp.message(Command("jizze"))
 async def jizze(message: Message):
-    await message.answer(
-        "Джиззи уебок"
+
+    cur.execute(
+        "SELECT count FROM counters WHERE command='Jizze'"
     )
 
+    row = cur.fetchone()
+
+    if row:
+        count = row[0] + 1
+
+        cur.execute(
+            "UPDATE counters SET count=? WHERE command='Jizze'",
+            (count,)
+        )
+    else:
+        count = 1
+
+        cur.execute(
+            "INSERT INTO counters(command, count) VALUES(?, ?)",
+            ("Jizze", count)
+        )
+
+    db.commit()
+
+    await message.answer(
+        f"Джиззи уебок {count}"
+    )
+    
 @dp.callback_query(F.data == "biz")
 async def biz(callback: CallbackQuery):
     await callback.answer()
