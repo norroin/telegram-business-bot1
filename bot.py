@@ -5,6 +5,7 @@ import asyncio
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
+from aiogram.types import BotCommand
 from aiogram.types import (
     Message,
     CallbackQuery,
@@ -1078,6 +1079,20 @@ async def help_btn(callback: CallbackQuery):
     await callback.answer()
 
     await support(callback.message)
+
+async def set_commands(bot):
+    commands = [
+        BotCommand(command="start", description="Главное меню"),
+        BotCommand(command="business", description="Поиск бизнеса"),
+        BotCommand(command="bizlist", description="Список бизнесов"),
+        BotCommand(command="categories", description="Список категорий"),
+        BotCommand(command="support", description="Помощь"),
+        BotCommand(command="role", description="Моя роль"),
+        BotCommand(command="vbiz", description="Изменение владельца"),
+        BotCommand(command="fbiz", description="Изменение фотографии"),
+    ]
+
+    await bot.set_my_commands(commands)
 
 async def main():
     await dp.start_polling(bot)
