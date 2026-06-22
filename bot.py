@@ -1043,18 +1043,6 @@ async def checkrole(message: Message):
 
     await message.answer(str(rows))
 
-@dp.message(Command("resetfsm"))
-async def reset_fsm(message: Message, state: FSMContext):
-    if not is_editor(message.from_user.id):
-        await message.answer("Недостаточно прав.")
-        return
-
-    await state.clear()
-
-    await message.answer(
-        "FSM сброшен."
-    )
-
 @dp.message(Command("jizze"))
 async def jizze(message: Message):
     await message.answer(
@@ -1086,21 +1074,17 @@ async def biz(callback: CallbackQuery):
 
 
 @dp.callback_query(F.data == "categories")
-async def categories(callback: CallbackQuery):
+async def categories_btn(callback: CallbackQuery):
     await callback.answer()
 
-    await callback.message.answer(
-        "Список категорий..."
-    )
+    await categories(callback.message)
 
 
 @dp.callback_query(F.data == "help")
 async def help_btn(callback: CallbackQuery):
     await callback.answer()
 
-    await callback.message.answer(
-        "Помощь..."
-    )
+    await support(callback.message)
 
 async def main():
     await dp.start_polling(bot)
