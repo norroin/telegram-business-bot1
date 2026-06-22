@@ -5,7 +5,12 @@ import asyncio
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import (
+    Message,
+    CallbackQuery,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton
+)
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
@@ -1058,18 +1063,26 @@ async def jizze(message: Message):
 
 @dp.callback_query(F.data == "biz")
 async def biz(callback: CallbackQuery):
+    await callback.answer()
+
     await callback.message.answer(
         "Список бизнесов..."
     )
 
+
 @dp.callback_query(F.data == "categories")
 async def categories(callback: CallbackQuery):
+    await callback.answer()
+
     await callback.message.answer(
         "Список категорий..."
     )
 
+
 @dp.callback_query(F.data == "help")
 async def help_btn(callback: CallbackQuery):
+    await callback.answer()
+
     await callback.message.answer(
         "Помощь..."
     )
