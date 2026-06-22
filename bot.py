@@ -104,19 +104,25 @@ async def start(message: Message):
 
     kb = ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="📋 Бизнесы")],
-            [KeyboardButton(text="📂 Категории")],
-            [KeyboardButton(text="ℹ️ Помощь")]
+            [
+                KeyboardButton(text="🏢 Бизнесы"),
+                KeyboardButton(text="📂 Категории")
+            ],
+            [
+                KeyboardButton(text="🔍 Поиск"),
+                KeyboardButton(text="ℹ️ Помощь")
+            ]
         ],
         resize_keyboard=True
     )
 
     await message.answer(
-        "Добро пожаловать!",
+        f"👋 Привет, {message.from_user.first_name}!\n\n"
+        "Я помощник по бизнесам.\n\n"
+        "👇 Выберите раздел ниже",
         reply_markup=kb
     )
-
-
+    
 @dp.message(Command("business"))
 async def business(message: Message):
     args = message.text.split(maxsplit=1)
