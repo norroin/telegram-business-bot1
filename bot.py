@@ -1093,8 +1093,9 @@ async def set_commands(bot):
     ]
 
     await bot.set_my_commands(commands)
-
+    
 async def main():
+    await set_commands(bot)
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
