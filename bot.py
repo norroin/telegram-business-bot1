@@ -99,27 +99,39 @@ class ChangePhotoCmd(StatesGroup):
     business_id = State()
     photo = State()
 
+from aiogram.types import (
+    InlineKeyboardMarkup,
+    InlineKeyboardButton
+)
+
 @dp.message(Command("start"))
 async def start(message: Message):
 
-    kb = ReplyKeyboardMarkup(
-        keyboard=[
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
             [
-                KeyboardButton(text="🏢 Бизнесы"),
-                KeyboardButton(text="📂 Категории")
+                InlineKeyboardButton(
+                    text="🏢 Бизнесы",
+                    callback_data="biz"
+                )
             ],
             [
-                KeyboardButton(text="🔍 Поиск"),
-                KeyboardButton(text="ℹ️ Помощь")
+                InlineKeyboardButton(
+                    text="📂 Категории",
+                    callback_data="categories"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="ℹ️ Помощь",
+                    callback_data="help"
+                )
             ]
-        ],
-        resize_keyboard=True
+        ]
     )
 
     await message.answer(
-        f"👋 Привет, {message.from_user.first_name}!\n\n"
-        "Я помощник по бизнесам.\n\n"
-        "👇 Выберите раздел ниже",
+        "Добро пожаловать!",
         reply_markup=kb
     )
     
@@ -1042,6 +1054,24 @@ async def reset_fsm(message: Message, state: FSMContext):
 async def jizze(message: Message):
     await message.answer(
         "Джиззи уебок"
+    )
+
+@dp.callback_query(F.data == "biz")
+async def biz(callback: CallbackQuery):
+    await callback.message.answer(
+        "Список бизнесов..."
+    )
+
+@dp.callback_query(F.data == "categories")
+async def categories(callback: CallbackQuery):
+    await callback.message.answer(
+        "Список категорий..."
+    )
+
+@dp.callback_query(F.data == "help")
+async def help_btn(callback: CallbackQuery):
+    await callback.message.answer(
+        "Помощь..."
     )
 
 async def main():
