@@ -1124,6 +1124,7 @@ async def clear_chat(message: Message):
             pass
 
 async def main():
+    await bot.delete_webhook(drop_pending_updates=True)
     await set_commands(bot)
     await dp.start_polling(bot)
 
