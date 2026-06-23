@@ -1093,7 +1093,36 @@ async def set_commands(bot):
     ]
 
     await bot.set_my_commands(commands)
-    
+
+@dp.message(Command("clear"))
+async def clear_chat(message: Message):
+
+    if get_role(message.from_user.id) < 2:
+        await message.answer("❌ Команда доступна только создателю.")
+        return
+
+    args = message.text.split()
+
+    if len(args) != 2 or not args[1].isdigit():
+        await message.answer(
+            "Использование:\n/clear 100"
+        )
+        return
+
+    count = int(args[1])
+
+    for msg_id in range(
+        message.message_id - count,
+        message.message_id + 1
+    ):
+        try:
+            await bot.delete_message(
+                chat_id=message.chat.id,
+                message_id=msg_id
+            )
+        except:
+            pass
+
 async def main():
     await set_commands(bot)
     await dp.start_polling(bot)
