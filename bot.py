@@ -1271,11 +1271,13 @@ async def checkrole(message: Message):
 @dp.callback_query(F.data == "biz")
 async def biz(callback: CallbackQuery):
 
-    if not await check_sub(callback.message)
+    if not await check_sub(callback.message):
         await require_sub(callback.message)
         return
-    
+
     await callback.answer()
+
+    await bizlist(callback.message)
 
     cur.execute(
         "SELECT id, name FROM businesses ORDER BY id"
