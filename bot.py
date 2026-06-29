@@ -1271,8 +1271,8 @@ async def checkrole(message: Message):
 @dp.callback_query(F.data == "biz")
 async def biz(callback: CallbackQuery):
 
-    if not await check_sub(message):
-        await require_sub(message)
+    if not await check_sub(callback.message)
+        await require_sub(callback.message)
         return
     
     await callback.answer()
@@ -1300,10 +1300,10 @@ async def biz(callback: CallbackQuery):
 @dp.callback_query(F.data == "categories")
 async def categories_btn(callback: CallbackQuery):
 
-    if not await check_sub(message):
-        await require_sub(message)
+    if not await check_sub(callback.message):
+        await require_sub(callback.message)
         return
-    
+
     await callback.answer()
 
     await categories(callback.message)
@@ -1312,9 +1312,9 @@ async def categories_btn(callback: CallbackQuery):
 @dp.callback_query(F.data == "help")
 async def help_btn(callback: CallbackQuery):
 
-    if not await check_sub(message):
-        await require_sub(message)
-        return
+if not await check_sub(callback.message):
+    await require_sub(callback.message)
+    return
     
     await callback.answer()
 
