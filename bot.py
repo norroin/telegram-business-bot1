@@ -1694,7 +1694,98 @@ async def repadm(message: Message):
     await message.answer(
         f"✅ Репутация администратора {nickname} изменена на {reputation}."
     )
+    
+@dp.message(Command("rep"))
+async def rep(message: Message):
 
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+
+    args = message.text.split()
+
+    if len(args) != 3:
+        await message.answer(
+            "Пример:\n"
+            "/rep 1 +\n"
+            "/rep 1 -"
+        )
+        return
+
+    try:
+        admin_id = int(args[1])
+    except ValueError:
+        await message.answer("ID должен быть числом.")
+        return
+
+    if args[2] == "+":
+        vote = 1
+    elif args[2] == "-":
+        vote = -1
+    else:
+        await message.answer("Используйте только + или -")
+        return
+
+    cur.execute(
+        "SELECT nickname FROM admins WHERE id=?",
+        (admin_id,)
+    )
+
+    admin = cur.fetchone()
+
+    if not admin:
+        await message.answer("Администратор не найден.")
+        return
+
+    cur.execute(
+        """
+        SELECT vote
+        FROM admin_votes
+        WHERE user_id=? AND admin_id=?
+        """,
+        (
+            message.from_user.id,
+            admin_id
+        )
+    )
+
+    if cur.fetchone():
+        await message.answer(
+            "Вы уже оценивали этого администратора."
+        )
+        return
+
+    cur.execute(
+        """
+        INSERT INTO admin_votes
+        (user_id, admin_id, vote)
+        VALUES (?, ?, ?)
+        """,
+        (
+            message.from_user.id,
+            admin_id,
+            vote
+        )
+    )
+
+    cur.execute(
+        """
+        UPDATE admins
+        SET reputation = reputation + ?
+        WHERE id=?
+        """,
+        (
+            vote,
+            admin_id
+        )
+    )
+
+    db.commit()
+
+    await message.answer(
+        "Спасибо за вашу оценку!"
+    )
+    
 async def main():
     print("BOT STARTED")
     await bot.delete_webhook(drop_pending_updates=True)
