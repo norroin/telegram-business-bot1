@@ -86,6 +86,17 @@ CREATE TABLE IF NOT EXISTS logs(
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
 """)
+
+cur.execute("""
+CREATE TABLE IF NOT EXISTS admins(
+    id INTEGER PRIMARY KEY,
+    nickname TEXT NOT NULL,
+    vk TEXT,
+    position TEXT,
+    reputation INTEGER DEFAULT 0
+)
+""")
+
 db.commit()
 
 def get_role(user_id):
@@ -971,6 +982,10 @@ async def support(message: Message):
         "/categories - список категорий\n"
         "/role - моя роль\n"
         "/support - справка\n"
+        "/admin - список администрации\n"
+        "/iadmin - профиль админи\n"
+        "/rep - проголосовать за админа\n"
+        "/topadmin - Топ репутации администрации\n"
     )
 
     if role >= 1:
@@ -980,13 +995,16 @@ async def support(message: Message):
             "/fbiz ID Фотография - изменение фотографии\n"
             "/cbiz ID Категория - изменение категории\n"
             "/delcbiz ID - удаление категории\n"
+            "/dadm ID - изменение должности\n"
         )
 
     if role >= 2:
         text += (
             "\n👑 Создатель:\n"
-            "/nbiz ID Новое название\n"
-            "/lbiz ID Новый адрес\n"
+            "/nbiz ID - Новое название\n"
+            "/repadm - изменить репутацию\n"
+            "/lbiz ID - Новый адрес\n"
+            "/addadm ID - Добавить админа в список\n"
             "/delbiz ID - удалить бизнес\n"
             "/userrole ID - статус роли\n"
             "/addbiz ID | Автоцентр Премиум | Иван Петров | Москва | Автосервис - создание бизнеса\n"
@@ -1332,6 +1350,13 @@ async def set_commands(bot):
         BotCommand(command="role", description="Моя роль"),
         BotCommand(command="vbiz", description="Изменение владельца"),
         BotCommand(command="fbiz", description="Изменение фотографии"),
+        BotCommand(command="admin", description="Список администрации"),
+        BotCommand(command="iadmin", description="Информация о админе"),
+        BotCommand(command="deladm", description="Удалить админа из списка"),
+        BotCommand(command="dadmin", description="Изменить должность"),
+        BotCommand(command="admin", description="Список администрации"),
+        BotCommand(command="rep", description="Проголосвать за репутацию"),
+        BotCommand(command="topadmin", description="топ репутации администрации")
     ]
 
     await bot.set_my_commands(commands)
@@ -1468,13 +1493,13 @@ async def admin_list(message: Message):
     await message.answer(text)
 
 @dp.message(Command("iadmin"))
-async def info_admin(message: Message):
+async def iadmin(message: Message):
 
     if not await check_sub(message):
         await require_sub(message)
         return
 
-    args = message.text.split(maxsplit=1)
+    args = message.text.split()
 
     if len(args) != 2:
         await message.answer(
@@ -1488,14 +1513,11 @@ async def info_admin(message: Message):
         await message.answer("ID должен быть числом.")
         return
 
-    cur.execute(
-        """
+    cur.execute("""
         SELECT id, nickname, vk, position, reputation
         FROM admins
         WHERE id=?
-        """,
-        (admin_id,)
-    )
+    """, (admin_id,))
 
     admin = cur.fetchone()
 
@@ -1505,12 +1527,37 @@ async def info_admin(message: Message):
 
     admin_id, nickname, vk, position, reputation = admin
 
+    cur.execute("""
+        SELECT id
+        FROM admins
+        ORDER BY reputation DESC, nickname
+    """)
+
+    rating = cur.fetchall()
+
+    place = None
+
+    for i, (aid,) in enumerate(rating, start=1):
+        if aid == admin_id:
+            place = i
+            break
+
+    if place == 1:
+        medal = "🥇"
+    elif place == 2:
+        medal = "🥈"
+    elif place == 3:
+        medal = "🥉"
+    else:
+        medal = f"#{place}"
+
     text = (
         "👤 Информация об администраторе\n\n"
         f"🆔 ID: {admin_id}\n"
         f"👤 Ник: {nickname}\n"
-        f"💼 Должность: {position}\n"
-        f"⭐ Репутация: {reputation}\n\n"
+        f"💼 Должность: {position}\n\n"
+        f"⭐ Репутация: {reputation}\n"
+        f"🏆 Место в рейтинге: {medal}\n\n"
         f"🔗 ВКонтакте:\n{vk}"
     )
 
@@ -1787,7 +1834,48 @@ async def rep(message: Message):
     await message.answer(
         "Спасибо за вашу оценку!"
     )
-    
+
+@dp.message(Command("topadmin"))
+async def topadmin(message: Message):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+
+    cur.execute("""
+        SELECT nickname, position, reputation
+        FROM admins
+        ORDER BY reputation DESC, nickname
+        LIMIT 10
+    """)
+
+    rows = cur.fetchall()
+
+    if not rows:
+        await message.answer("Список администрации пуст.")
+        return
+
+    medals = {
+        1: "🥇",
+        2: "🥈",
+        3: "🥉"
+    }
+
+    text = "🏆 Топ по репутации администрации Брянска\n\n"
+
+    for i, (nickname, position, reputation) in enumerate(rows, start=1):
+
+        place = medals.get(i, f"🔹 {i} место")
+
+        text += (
+            f"{place}\n"
+            f"👤 {nickname}\n"
+            f"💼 {position}\n"
+            f"⭐ Репутация: {reputation}\n\n"
+        )
+
+    await message.answer(text)
+
 async def main():
     print("BOT STARTED")
     await bot.delete_webhook(drop_pending_updates=True)
