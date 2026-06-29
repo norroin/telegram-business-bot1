@@ -26,6 +26,17 @@ CREATE TABLE IF NOT EXISTS logs(
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
 """)
+
+cur.execute("""
+CREATE TABLE IF NOT EXISTS admins(
+    id INTEGER PRIMARY KEY,
+    nickname TEXT NOT NULL,
+    vk TEXT,
+    position TEXT,
+    reputation INTEGER DEFAULT 0
+)
+""")
+
 db.commit()
 db.close()
 print("database.db created")
