@@ -303,13 +303,14 @@ async def bizlist(message: Message):
     await message.answer(text)
 
 @dp.message(Command("admintab"))
-async def admin(message: Message):
+async def admintab(message: Message):
 
     if not await check_sub(message):
         await require_sub(message)
         return
 
-    if message.from_user.id not in ADMINS:
+    if get_role(message.from_user.id) < 2:
+        await message.answer("❌ Недостаточно прав.")
         return
 
     kb = ReplyKeyboardMarkup(
