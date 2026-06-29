@@ -24,6 +24,42 @@ dp = Dispatcher()
 db = sqlite3.connect("/data/database.db")
 cur = db.cursor()
 
+CHANNEL_ID = -1002484763518
+
+async def check_sub(message: Message):
+    try:
+        member = await bot.get_chat_member(
+            CHANNEL_ID,
+            message.from_user.id
+        )
+
+        return member.status in [
+            "member",
+            "administrator",
+            "creator"
+        ]
+    except:
+        return False
+
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
+async def require_sub(message: Message):
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="📢 Подписаться",
+                    url="https://t.me/USERNAME_КАНАЛА"
+                )
+            ]
+        ]
+    )
+
+    await message.answer(
+        "❌ Для использования бота необходимо подписаться на канал.",
+        reply_markup=kb
+    )
+
 cur.execute("""
 CREATE TABLE IF NOT EXISTS businesses(
     id INTEGER PRIMARY KEY,
@@ -112,6 +148,11 @@ from aiogram.types import (
 @dp.message(Command("start"))
 async def start(message: Message):
 
+if not await check_sub(message):
+    await require_sub(message)
+    return
+
+    
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
             [
@@ -142,6 +183,11 @@ async def start(message: Message):
     
 @dp.message(Command("business"))
 async def business(message: Message):
+    
+if not await check_sub(message):
+    await require_sub(message)
+    return
+    
     args = message.text.split(maxsplit=1)
 
     if len(args) != 2:
@@ -234,6 +280,11 @@ async def business(message: Message):
 
 @dp.message(Command("bizlist"))
 async def bizlist(message: Message):
+    
+if not await check_sub(message):
+    await require_sub(message)
+    return
+    
     cur.execute(
         "SELECT id, name FROM businesses ORDER BY id"
     )
@@ -254,6 +305,11 @@ async def bizlist(message: Message):
 
 @dp.message(Command("admin"))
 async def admin(message: Message):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+
     if message.from_user.id not in ADMINS:
         return
 
@@ -267,11 +323,18 @@ async def admin(message: Message):
         resize_keyboard=True
     )
 
-    await message.answer("Админ-панель", reply_markup=kb)
-
+    await message.answer(
+        "Админ-панель",
+        reply_markup=kb
+    )
 
 @dp.message(Command("cancel"))
 async def cancel(message: Message, state: FSMContext):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     current = await state.get_state()
 
     if current:
@@ -282,6 +345,11 @@ async def cancel(message: Message, state: FSMContext):
 
 @dp.message(F.text == "➕ Добавить бизнес")
 async def add_start(message: Message, state: FSMContext):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     if message.from_user.id not in ADMINS:
         return
 
@@ -291,12 +359,21 @@ async def add_start(message: Message, state: FSMContext):
 
 @dp.message(AddBusiness.name)
 async def add_name(message: Message, state: FSMContext):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+
     await state.update_data(name=message.text)
     await state.set_state(AddBusiness.owner)
     await message.answer("Введите владельца")
 
 @dp.message(AddBusiness.id)
 async def add_id(message: Message, state: FSMContext):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
 
     if message.text and message.text.startswith("/"):
         return
@@ -329,6 +406,11 @@ async def add_id(message: Message, state: FSMContext):
 
 @dp.message(AddBusiness.owner)
 async def add_owner(message: Message, state: FSMContext):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     await state.update_data(owner=message.text)
     await state.set_state(AddBusiness.category)
     await message.answer("Введите категорию")
@@ -336,6 +418,11 @@ async def add_owner(message: Message, state: FSMContext):
 
 @dp.message(AddBusiness.category)
 async def add_category(message: Message, state: FSMContext):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     await state.update_data(category=message.text)
     await state.set_state(AddBusiness.location)
     await message.answer("Введите адрес")
@@ -343,6 +430,11 @@ async def add_category(message: Message, state: FSMContext):
 
 @dp.message(AddBusiness.location)
 async def add_location(message: Message, state: FSMContext):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     data = await state.get_data()
 
     cur.execute(
@@ -367,17 +459,32 @@ async def add_location(message: Message, state: FSMContext):
 
 @dp.message(F.text == "👤 Изменить владельца")
 async def owner_start(message: Message, state: FSMContext):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     await state.set_state(ChangeOwner.business_id)
     await message.answer("Введите ID бизнеса")
 
 @dp.message(ChangeOwner.business_id)
 async def owner_bid(message: Message, state: FSMContext):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     await state.update_data(id=message.text)
     await state.set_state(ChangeOwner.owner)
     await message.answer("Введите нового владельца")
 
 @dp.message(ChangeOwner.owner)
 async def owner_save(message: Message, state: FSMContext):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     data = await state.get_data()
 
     cur.execute(
@@ -391,17 +498,32 @@ async def owner_save(message: Message, state: FSMContext):
 
 @dp.message(F.text == "📍 Изменить адрес")
 async def location_start(message: Message, state: FSMContext):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     await state.set_state(ChangeLocation.business_id)
     await message.answer("Введите ID бизнеса")
 
 @dp.message(ChangeLocation.business_id)
 async def location_bid(message: Message, state: FSMContext):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     await state.update_data(id=message.text)
     await state.set_state(ChangeLocation.location)
     await message.answer("Введите новый адрес")
 
 @dp.message(ChangeLocation.location)
 async def location_save(message: Message, state: FSMContext):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     data = await state.get_data()
 
     cur.execute(
@@ -415,17 +537,32 @@ async def location_save(message: Message, state: FSMContext):
 
 @dp.message(F.text == "📷 Добавить фото")
 async def photo_start(message: Message, state: FSMContext):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     await state.set_state(UploadPhoto.business_id)
     await message.answer("Введите ID бизнеса")
 
 @dp.message(UploadPhoto.business_id)
 async def photo_bid(message: Message, state: FSMContext):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     await state.update_data(id=message.text)
     await state.set_state(UploadPhoto.photo)
     await message.answer("Отправьте фотографию")
 
 @dp.message(UploadPhoto.photo, F.photo)
 async def photo_save(message: Message, state: FSMContext):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     data = await state.get_data()
 
     photo_id = message.photo[-1].file_id
@@ -442,6 +579,11 @@ async def photo_save(message: Message, state: FSMContext):
 
 @dp.message(Command("setrole"))
 async def set_role(message: Message):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     if message.from_user.id not in ADMINS:
         return
 
@@ -481,6 +623,11 @@ async def set_role(message: Message):
 
 @dp.message(Command("cbiz"))
 async def cbiz(message: Message):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     if not is_editor(message.from_user.id):
         await message.answer("Недостаточно прав.")
         return
@@ -506,6 +653,11 @@ async def cbiz(message: Message):
 
 @dp.message(Command("delcbiz"))
 async def delcbiz(message: Message):
+    
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     if not is_editor(message.from_user.id):
         await message.answer("Недостаточно прав.")
         return
@@ -531,6 +683,11 @@ async def delcbiz(message: Message):
 
 @dp.message(Command("nbiz"))
 async def nbiz(message: Message):
+    
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     if not is_creator(message.from_user.id):
         await message.answer("Недостаточно прав.")
         return
@@ -568,6 +725,11 @@ async def nbiz(message: Message):
 
 @dp.message(Command("lbiz"))
 async def lbiz(message: Message):
+    
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     if not is_creator(message.from_user.id):
         await message.answer("Недостаточно прав.")
         return
@@ -604,7 +766,12 @@ async def lbiz(message: Message):
     )
 
 @dp.message(Command("delbiz"))
-async def delbiz(message: Message):
+async def delbiz(message: Message)
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+        
     if not is_creator(message.from_user.id):
         await message.answer("Недостаточно прав.")
         return
@@ -646,6 +813,11 @@ async def delbiz(message: Message):
 
 @dp.message(Command("vbiz"))
 async def vbiz(message: Message):
+    
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     if not is_editor(message.from_user.id):
         await message.answer("Недостаточно прав.")
         return
@@ -689,6 +861,10 @@ async def vbiz(message: Message):
 @dp.message(Command("fbiz"))
 async def fbiz(message: Message, state: FSMContext):
 
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+
     if not is_editor(message.from_user.id):
         await message.answer("Недостаточно прав.")
         return
@@ -724,6 +900,11 @@ async def fbiz(message: Message, state: FSMContext):
 
 @dp.message(ChangePhotoCmd.photo, F.photo)
 async def fbiz_save(message: Message, state: FSMContext):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     data = await state.get_data()
 
     photo_id = message.photo[-1].file_id
@@ -743,6 +924,11 @@ async def fbiz_save(message: Message, state: FSMContext):
 
 @dp.message(Command("categories"))
 async def categories(message: Message):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     cur.execute(
         """
         SELECT DISTINCT category
@@ -768,6 +954,10 @@ async def categories(message: Message):
 
 @dp.message(Command("support"))
 async def support(message: Message):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
 
     role = get_role(message.from_user.id)
 
@@ -807,6 +997,10 @@ async def support(message: Message):
 @dp.message(Command("role"))
 async def role(message: Message):
 
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+
     role = get_role(message.from_user.id)
 
     roles = {
@@ -821,6 +1015,10 @@ async def role(message: Message):
 
 @dp.message(Command("userrole"))
 async def userrole(message: Message):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return    
 
     if not is_creator(message.from_user.id):
         await message.answer(
@@ -859,6 +1057,11 @@ async def userrole(message: Message):
 
 @dp.message(F.text == "📋 Бизнесы")
 async def menu_bizlist(message: Message):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     cur.execute(
         "SELECT id, name FROM businesses ORDER BY id"
     )
@@ -878,6 +1081,10 @@ async def menu_bizlist(message: Message):
 
 @dp.message(F.text == "📂 Категории")
 async def menu_categories(message: Message):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return    
 
     cur.execute(
         """
@@ -906,6 +1113,10 @@ async def menu_categories(message: Message):
 
 @dp.message(F.text == "ℹ️ Помощь")
 async def menu_help(message: Message):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return    
 
     role = get_role(message.from_user.id)
 
@@ -941,6 +1152,10 @@ async def menu_help(message: Message):
 
 @dp.message(Command("addbiz"))
 async def addbiz(message: Message):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return    
 
     if not is_creator(message.from_user.id):
         await message.answer("Недостаточно прав.")
@@ -1003,6 +1218,11 @@ async def addbiz(message: Message):
 
 @dp.message(Command("logs"))
 async def logs(message: Message):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     if not is_creator(message.from_user.id):
         await message.answer("Недостаточно прав.")
         return
@@ -1035,6 +1255,11 @@ async def logs(message: Message):
 
 @dp.message(Command("checkrole"))
 async def checkrole(message: Message):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     cur.execute(
         "SELECT * FROM roles"
     )
@@ -1045,6 +1270,11 @@ async def checkrole(message: Message):
     
 @dp.callback_query(F.data == "biz")
 async def biz(callback: CallbackQuery):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     await callback.answer()
 
     cur.execute(
@@ -1069,6 +1299,11 @@ async def biz(callback: CallbackQuery):
 
 @dp.callback_query(F.data == "categories")
 async def categories_btn(callback: CallbackQuery):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     await callback.answer()
 
     await categories(callback.message)
@@ -1076,6 +1311,11 @@ async def categories_btn(callback: CallbackQuery):
 
 @dp.callback_query(F.data == "help")
 async def help_btn(callback: CallbackQuery):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+    
     await callback.answer()
 
     await support(callback.message)
@@ -1096,6 +1336,10 @@ async def set_commands(bot):
 
 @dp.message(Command("clear"))
 async def clear_chat(message: Message):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return    
 
     if get_role(message.from_user.id) < 2:
         await message.answer("❌ Команда доступна только создателю.")
