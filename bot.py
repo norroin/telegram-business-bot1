@@ -183,9 +183,9 @@ async def start(message: Message):
 @dp.message(Command("business"))
 async def business(message: Message):
     
-if not await check_sub(message):
-    await require_sub(message)
-    return
+    if not await check_sub(message):
+        await require_sub(message)
+        return
     
     args = message.text.split(maxsplit=1)
 
@@ -280,9 +280,9 @@ if not await check_sub(message):
 @dp.message(Command("bizlist"))
 async def bizlist(message: Message):
     
-if not await check_sub(message):
-    await require_sub(message)
-    return
+    if not await check_sub(message):
+        await require_sub(message)
+        return
     
     cur.execute(
         "SELECT id, name FROM businesses ORDER BY id"
