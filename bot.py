@@ -1431,6 +1431,270 @@ async def addadm(message: Message):
 
     await message.answer("✅ Администратор добавлен.")
 
+@dp.message(Command("admin"))
+async def admin_list(message: Message):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+
+    cur.execute(
+        """
+        SELECT id, nickname, position
+        FROM admins
+        ORDER BY id
+        """
+    )
+
+    rows = cur.fetchall()
+
+    if not rows:
+        await message.answer(
+            "Список администрации пуст."
+        )
+        return
+
+    text = "👮 Администрация Брянска\n\n"
+
+    for admin_id, nickname, position in rows:
+        text += (
+            f"🆔 {admin_id} - "
+            f"{nickname} - "
+            f"{position}\n"
+        )
+
+    await message.answer(text)
+
+@dp.message(Command("iadmin"))
+async def info_admin(message: Message):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+
+    args = message.text.split(maxsplit=1)
+
+    if len(args) != 2:
+        await message.answer(
+            "Пример:\n/iadmin 1"
+        )
+        return
+
+    try:
+        admin_id = int(args[1])
+    except ValueError:
+        await message.answer("ID должен быть числом.")
+        return
+
+    cur.execute(
+        """
+        SELECT id, nickname, vk, position, reputation
+        FROM admins
+        WHERE id=?
+        """,
+        (admin_id,)
+    )
+
+    admin = cur.fetchone()
+
+    if not admin:
+        await message.answer("Администратор не найден.")
+        return
+
+    admin_id, nickname, vk, position, reputation = admin
+
+    text = (
+        "👤 Информация об администраторе\n\n"
+        f"🆔 ID: {admin_id}\n"
+        f"👤 Ник: {nickname}\n"
+        f"💼 Должность: {position}\n"
+        f"⭐ Репутация: {reputation}\n\n"
+        f"🔗 ВКонтакте:\n{vk}"
+    )
+
+    await message.answer(text)
+
+@dp.message(Command("deladm"))
+async def deladm(message: Message):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+
+    if get_role(message.from_user.id) < 2:
+        await message.answer("Недостаточно прав.")
+        return
+
+    args = message.text.split()
+
+    if len(args) != 2:
+        await message.answer(
+            "Пример:\n/deladm 1"
+        )
+        return
+
+    try:
+        admin_id = int(args[1])
+    except ValueError:
+        await message.answer("ID должен быть числом.")
+        return
+
+    cur.execute(
+        "SELECT nickname FROM admins WHERE id=?",
+        (admin_id,)
+    )
+
+    admin = cur.fetchone()
+
+    if not admin:
+        await message.answer("Администратор не найден.")
+        return
+
+    nickname = admin[0]
+
+    cur.execute(
+        "DELETE FROM admins WHERE id=?",
+        (admin_id,)
+    )
+
+    db.commit()
+
+    add_log(
+        message.from_user.id,
+        f"Удалил администратора {nickname}"
+    )
+
+    await message.answer(
+        f"✅ Администратор {nickname} удалён."
+    )
+
+@dp.message(Command("dadm"))
+async def dadm(message: Message):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+
+    if get_role(message.from_user.id) < 1:
+        await message.answer("Недостаточно прав.")
+        return
+
+    args = message.text.split(maxsplit=2)
+
+    if len(args) != 3:
+        await message.answer(
+            "Пример:\n/dadm 1 Главный администратор"
+        )
+        return
+
+    try:
+        admin_id = int(args[1])
+    except ValueError:
+        await message.answer("ID должен быть числом.")
+        return
+
+    new_position = args[2]
+
+    cur.execute(
+        "SELECT nickname FROM admins WHERE id=?",
+        (admin_id,)
+    )
+
+    admin = cur.fetchone()
+
+    if not admin:
+        await message.answer("Администратор не найден.")
+        return
+
+    nickname = admin[0]
+
+    cur.execute(
+        """
+        UPDATE admins
+        SET position=?
+        WHERE id=?
+        """,
+        (
+            new_position,
+            admin_id
+        )
+    )
+
+    db.commit()
+
+    add_log(
+        message.from_user.id,
+        f"Изменил должность {nickname} -> {new_position}"
+    )
+
+    await message.answer(
+        "✅ Должность изменена."
+    )
+
+@dp.message(Command("repadm"))
+async def repadm(message: Message):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+
+    if get_role(message.from_user.id) < 1:
+        await message.answer("Недостаточно прав.")
+        return
+
+    args = message.text.split()
+
+    if len(args) != 3:
+        await message.answer(
+            "Пример:\n/repadm 1 15"
+        )
+        return
+
+    try:
+        admin_id = int(args[1])
+        reputation = int(args[2])
+    except ValueError:
+        await message.answer(
+            "ID и репутация должны быть числами."
+        )
+        return
+
+    cur.execute(
+        "SELECT nickname FROM admins WHERE id=?",
+        (admin_id,)
+    )
+
+    admin = cur.fetchone()
+
+    if not admin:
+        await message.answer("Администратор не найден.")
+        return
+
+    nickname = admin[0]
+
+    cur.execute(
+        """
+        UPDATE admins
+        SET reputation=?
+        WHERE id=?
+        """,
+        (
+            reputation,
+            admin_id
+        )
+    )
+
+    db.commit()
+
+    add_log(
+        message.from_user.id,
+        f"Изменил репутацию {nickname} -> {reputation}"
+    )
+
+    await message.answer(
+        f"✅ Репутация администратора {nickname} изменена на {reputation}."
+    )
+
 async def main():
     print("BOT STARTED")
     await bot.delete_webhook(drop_pending_updates=True)
