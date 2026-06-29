@@ -302,7 +302,7 @@ async def bizlist(message: Message):
 
     await message.answer(text)
 
-@dp.message(Command("admin"))
+@dp.message(Command("admintab"))
 async def admin(message: Message):
 
     if not await check_sub(message):
