@@ -37,6 +37,15 @@ CREATE TABLE IF NOT EXISTS admins(
 )
 """)
 
+cur.execute("""
+CREATE TABLE IF NOT EXISTS admin_votes(
+    user_id INTEGER,
+    admin_id INTEGER,
+    vote INTEGER,
+    PRIMARY KEY(user_id, admin_id)
+)
+""")
+
 db.commit()
 db.close()
 print("database.db created")
