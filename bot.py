@@ -148,11 +148,10 @@ from aiogram.types import (
 @dp.message(Command("start"))
 async def start(message: Message):
 
-if not await check_sub(message):
-    await require_sub(message)
-    return
-
-    
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+        
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
             [
