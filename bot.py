@@ -1367,6 +1367,70 @@ async def clear_chat(message: Message):
         except:
             pass
 
+@dp.message(Command("addadm"))
+async def addadm(message: Message):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+
+    if get_role(message.from_user.id) < 2:
+        await message.answer("Недостаточно прав.")
+        return
+
+    text = message.text.replace("/addadm", "", 1).strip()
+
+    parts = [x.strip() for x in text.split("|")]
+
+    if len(parts) != 4:
+        await message.answer(
+            "Пример:\n"
+            "/addadm 1 | Willy | https://vk.com/willy | Главный администратор"
+        )
+        return
+
+    try:
+        admin_id = int(parts[0])
+    except ValueError:
+        await message.answer("ID должен быть числом.")
+        return
+
+    nickname = parts[1]
+    vk = parts[2]
+    position = parts[3]
+
+    cur.execute(
+        "SELECT id FROM admins WHERE id=?",
+        (admin_id,)
+    )
+
+    if cur.fetchone():
+        await message.answer("Администратор с таким ID уже существует.")
+        return
+
+    cur.execute(
+        """
+        INSERT INTO admins
+        (id, nickname, vk, position, reputation)
+        VALUES (?, ?, ?, ?, 0)
+        """,
+        (
+            admin_id,
+            nickname,
+            vk,
+            position
+        )
+    )
+
+    db.commit()
+
+    add_log(
+        message.from_user.id,
+        f"Добавил администратора {nickname}"
+    )
+
+    await message.answer("✅ Администратор добавлен.")
+
 async def main():
     print("BOT STARTED")
     await bot.delete_webhook(drop_pending_updates=True)
