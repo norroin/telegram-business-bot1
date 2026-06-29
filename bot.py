@@ -49,7 +49,7 @@ async def require_sub(message: Message):
             [
                 InlineKeyboardButton(
                     text="📢 Подписаться",
-                    url="https://t.me/USERNAME_КАНАЛА"
+                    url="https://t.me/willyblackrussia"
                 )
             ]
         ]
