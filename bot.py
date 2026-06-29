@@ -765,12 +765,12 @@ async def lbiz(message: Message):
     )
 
 @dp.message(Command("delbiz"))
-async def delbiz(message: Message)
+async def delbiz(message: Message):
 
     if not await check_sub(message):
         await require_sub(message)
         return
-        
+
     if not is_creator(message.from_user.id):
         await message.answer("Недостаточно прав.")
         return
@@ -809,7 +809,7 @@ async def delbiz(message: Message)
     await message.answer(
         "Бизнес удалён."
     )
-
+    
 @dp.message(Command("vbiz"))
 async def vbiz(message: Message):
     
