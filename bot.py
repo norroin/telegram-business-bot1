@@ -24,7 +24,7 @@ dp = Dispatcher()
 db = sqlite3.connect("/data/database.db")
 cur = db.cursor()
 
-CHANNEL_ID = @willyblackrussia
+CHANNEL_ID = -1002484763518
 
 async def check_sub(message: Message):
     try:
