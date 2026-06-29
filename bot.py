@@ -88,12 +88,12 @@ CREATE TABLE IF NOT EXISTS logs(
 """)
 
 cur.execute("""
-CREATE TABLE IF NOT EXISTS admins(
-    id INTEGER PRIMARY KEY,
-    nickname TEXT NOT NULL,
-    vk TEXT,
-    position TEXT,
-    reputation INTEGER DEFAULT 0
+CREATE TABLE IF NOT EXISTS admin_votes(
+    user_id INTEGER,
+    admin_id INTEGER,
+    vote INTEGER,
+    voted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(user_id, admin_id)
 )
 """)
 
