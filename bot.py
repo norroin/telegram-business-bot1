@@ -1930,18 +1930,6 @@ async def bug(message: Message):
         "✅ Ваше предложение успешно отправлено разработчику."
     )
 
-@dp.message()
-async def save_chat(message: Message):
-
-    if message.chat.type in ["group", "supergroup"]:
-
-        cur.execute(
-            "INSERT OR IGNORE INTO chats(chat_id) VALUES(?)",
-            (message.chat.id,)
-        )
-
-        db.commit()
-
 @dp.message(Command("broadcast"))
 async def broadcast(message: Message):
 
@@ -2011,6 +1999,18 @@ async def stats(message: Message):
         f"🏢 Бизнесов: {businesses}\n"
         f"🛡 Администраторов: {admins}"
     )
+
+@dp.message()
+async def save_chat(message: Message):
+
+    if message.chat.type in ["group", "supergroup"]:
+
+        cur.execute(
+            "INSERT OR IGNORE INTO chats(chat_id) VALUES(?)",
+            (message.chat.id,)
+        )
+
+        db.commit()
 
 async def main():
     print("BOT STARTED")
