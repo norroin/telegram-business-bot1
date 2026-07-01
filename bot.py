@@ -1986,6 +1986,32 @@ async def broadcast(message: Message):
         f"👥 Группам: {chats_sent}"
     )
 
+@dp.message(Command("stats"))
+async def stats(message: Message):
+
+    if not is_creator(message.from_user.id):
+        return
+
+    cur.execute("SELECT COUNT(*) FROM users")
+    users = cur.fetchone()[0]
+
+    cur.execute("SELECT COUNT(*) FROM chats")
+    chats = cur.fetchone()[0]
+
+    cur.execute("SELECT COUNT(*) FROM businesses")
+    businesses = cur.fetchone()[0]
+
+    cur.execute("SELECT COUNT(*) FROM admins")
+    admins = cur.fetchone()[0]
+
+    await message.answer(
+        f"📊 Статистика бота\n\n"
+        f"👤 Пользователей: {users}\n"
+        f"👥 Групп: {chats}\n"
+        f"🏢 Бизнесов: {businesses}\n"
+        f"🛡 Администраторов: {admins}"
+    )
+
 async def main():
     print("BOT STARTED")
     await bot.delete_webhook(drop_pending_updates=True)
