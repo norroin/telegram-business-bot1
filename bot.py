@@ -98,6 +98,18 @@ CREATE TABLE IF NOT EXISTS admin_votes(
 )
 """)
 
+cur.execute("""
+CREATE TABLE IF NOT EXISTS users(
+    user_id INTEGER PRIMARY KEY
+)
+""")
+
+cur.execute("""
+CREATE TABLE IF NOT EXISTS chats(
+    chat_id INTEGER PRIMARY KEY
+)
+""")
+
 db.commit()
 
 def get_role(user_id):
@@ -163,7 +175,13 @@ async def start(message: Message):
     if not await check_sub(message):
         await require_sub(message)
         return
-        
+
+    cur.execute(
+        "INSERT OR IGNORE INTO users(user_id) VALUES(?)",
+        (message.from_user.id,)
+    )
+    db.commit()
+
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
             [
@@ -1910,6 +1928,62 @@ async def bug(message: Message):
 
     await message.answer(
         "✅ Ваше предложение успешно отправлено разработчику."
+    )
+
+@dp.message()
+async def save_chat(message: Message):
+
+    if message.chat.type in ["group", "supergroup"]:
+
+        cur.execute(
+            "INSERT OR IGNORE INTO chats(chat_id) VALUES(?)",
+            (message.chat.id,)
+        )
+
+        db.commit()
+
+@dp.message(Command("broadcast"))
+async def broadcast(message: Message):
+
+    if not is_creator(message.from_user.id):
+        return
+
+    args = message.text.split(maxsplit=1)
+
+    if len(args) != 2:
+        await message.answer(
+            "Пример:\n"
+            "/broadcast Текст сообщения"
+        )
+        return
+
+    text = args[1]
+
+    users_sent = 0
+    chats_sent = 0
+
+    cur.execute("SELECT user_id FROM users")
+
+    for (user_id,) in cur.fetchall():
+        try:
+            await bot.send_message(user_id, text)
+            users_sent += 1
+        except:
+            pass
+
+    cur.execute("SELECT chat_id FROM chats")
+
+    for (chat_id,) in cur.fetchall():
+        try:
+            await bot.send_message(chat_id, text)
+            chats_sent += 1
+        except:
+            pass
+
+    await message.answer(
+        f"✅ Рассылка завершена.\n\n"
+        f"👤 Пользователям: {users_sent}\n"
+        f"👥 Группам: {chats_sent}"
     )
 
 async def main():
