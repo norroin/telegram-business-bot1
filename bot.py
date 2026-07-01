@@ -25,6 +25,7 @@ db = sqlite3.connect("/data/database.db")
 cur = db.cursor()
 
 CHANNEL_ID = -1002484763518
+OWNER_ID = 5639087435
 
 async def check_sub(message: Message):
     try:
@@ -1875,6 +1876,39 @@ async def topadmin(message: Message):
         )
 
     await message.answer(text)
+
+@dp.message(Command("bug"))
+async def bug(message: Message):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+
+    args = message.text.split(maxsplit=1)
+
+    if len(args) != 2:
+        await message.answer(
+            "Пример:\n"
+            "/bug Добавить поиск по владельцу"
+        )
+        return
+
+    text = args[1]
+
+    await bot.send_message(
+        OWNER_ID,
+        (
+            "🐞 Новое предложение\n\n"
+            f"👤 Пользователь: {message.from_user.full_name}\n"
+            f"🆔 ID: {message.from_user.id}\n"
+            f"📎 Username: @{message.from_user.username if message.from_user.username else 'отсутствует'}\n\n"
+            f"💬 Сообщение:\n{text}"
+        )
+    )
+
+    await message.answer(
+        "✅ Ваше предложение успешно отправлено разработчику."
+    )
 
 async def main():
     print("BOT STARTED")
