@@ -2079,6 +2079,22 @@ async def bs(message: Message):
         f"⏰ До окончания: {end.strftime('%H:%M')}"
     )
 
+@dp.message(Command("delbs"))
+async def delbs(message: Message):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+
+    if get_role(message.from_user.id) < 1:
+        await message.answer("Недостаточно прав.")
+        return
+
+    cur.execute("DELETE FROM family_battle")
+    db.commit()
+
+    await message.answer("✅ Активная битва семей удалена.")
+
 @dp.message()
 async def save_chat(message: Message):
 
