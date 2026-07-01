@@ -110,6 +110,14 @@ CREATE TABLE IF NOT EXISTS chats(
 )
 """)
 
+cur.execute("""
+CREATE TABLE IF NOT EXISTS family_battle(
+    id INTEGER PRIMARY KEY,
+    location TEXT,
+    end_time TIMESTAMP
+)
+""")
+
 db.commit()
 
 def get_role(user_id):
@@ -1016,6 +1024,7 @@ async def support(message: Message):
             "/cbiz ID Категория - изменение категории\n"
             "/delcbiz ID - удаление категории\n"
             "/dadm ID - изменение должности\n"
+            "/addbc - добавить активное битву семей!только для бс!\n"
         )
 
     if role >= 2:
@@ -1377,7 +1386,8 @@ async def set_commands(bot):
         BotCommand(command="admin", description="Список администрации"),
         BotCommand(command="rep", description="Проголосвать за репутацию"),
         BotCommand(command="topadmin", description="топ репутации администрации"),
-        BotCommand(command="bug", description="Отправить предложение по улучшению")
+        BotCommand(command="bug", description="Отправить предложение по улучшению"),
+        BotCommand(command="bc", description="Посмотреть активные битвы семей")
     ]
 
     await bot.set_my_commands(commands)
@@ -1998,6 +2008,75 @@ async def stats(message: Message):
         f"👥 Групп: {chats}\n"
         f"🏢 Бизнесов: {businesses}\n"
         f"🛡 Администраторов: {admins}"
+    )
+
+from datetime import datetime
+
+@dp.message(Command("addbs"))
+async def addbs(message: Message):
+
+    if get_role(message.from_user.id) < 1:
+        return
+
+    args = message.text.split()
+
+    if len(args) != 3:
+        await message.answer(
+            "Пример:\n"
+            "/addbs 17:00 1-5"
+        )
+        return
+
+    end = args[1]
+    location = args[2]
+
+    today = datetime.now().strftime("%Y-%m-%d")
+    end_time = f"{today} {end}:00"
+
+    cur.execute("DELETE FROM family_battle")
+
+    cur.execute(
+        """
+        INSERT INTO family_battle(location, end_time)
+        VALUES(?, ?)
+        """,
+        (location, end_time)
+    )
+
+    db.commit()
+
+    await message.answer("✅ Активная БС добавлена.")
+
+from datetime import datetime
+
+@dp.message(Command("bs"))
+async def bs(message: Message):
+
+    cur.execute(
+        "SELECT location, end_time FROM family_battle LIMIT 1"
+    )
+
+    row = cur.fetchone()
+
+    if not row:
+        await message.answer("Активных битв семей нет.")
+        return
+
+    location, end_time = row
+
+    end = datetime.fromisoformat(end_time)
+
+    if datetime.now() >= end:
+        cur.execute("DELETE FROM family_battle")
+        db.commit()
+
+        await message.answer("Активных битв семей нет.")
+        return
+
+    await message.answer(
+        f"⚔ Активная битва семей\n\n"
+        f"📍 Местоположение: /gps {location}\n"
+        f"⏰ До окончания: {end.strftime('%H:%M')}"
     )
 
 @dp.message()
