@@ -987,6 +987,7 @@ async def support(message: Message):
         "/iadmin - профиль админи\n"
         "/rep - проголосовать за админа\n"
         "/topadmin - Топ репутации администрации\n"
+        "/bug - отправить предложение по улучшению\n"
     )
 
     if role >= 1:
@@ -1357,7 +1358,8 @@ async def set_commands(bot):
         BotCommand(command="dadmin", description="Изменить должность"),
         BotCommand(command="admin", description="Список администрации"),
         BotCommand(command="rep", description="Проголосвать за репутацию"),
-        BotCommand(command="topadmin", description="топ репутации администрации")
+        BotCommand(command="topadmin", description="топ репутации администрации"),
+        BotCommand(command="bug", description="Отправить предложение по улучшению")
     ]
 
     await bot.set_my_commands(commands)
