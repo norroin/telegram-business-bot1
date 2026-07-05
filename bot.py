@@ -194,55 +194,41 @@ async def start(message: Message):
         await require_sub(message)
         return
 
-cur.execute(
-    "SELECT user_id FROM users WHERE user_id=?",
-    (message.from_user.id,)
-)
-
-user = cur.fetchone()
-
-if not user:
     cur.execute(
-        "INSERT INTO users(user_id, username, first_name, reg_date) VALUES(?,?,?,?)",
-        (
-            message.from_user.id,
-            message.from_user.username,
-            message.from_user.full_name,
-            datetime.now().strftime("%d.%m.%Y")
-        )
+        "SELECT user_id FROM users WHERE user_id=?",
+        (message.from_user.id,)
     )
-    db.commit()
 
-    await bot.send_message(
-        OWNER_ID,
-        f"""
+    user = cur.fetchone()
+
+    if not user:
+        cur.execute(
+            "INSERT INTO users(user_id, username, first_name, reg_date) VALUES(?,?,?,?)",
+            (
+                message.from_user.id,
+                message.from_user.username,
+                message.from_user.full_name,
+                datetime.now().strftime("%d.%m.%Y")
+            )
+        )
+        db.commit()
+
+        await bot.send_message(
+            OWNER_ID,
+            f"""
 🆕 Новый пользователь
 
 👤 {message.from_user.full_name}
 🆔 {message.from_user.id}
 🔗 @{message.from_user.username if message.from_user.username else 'нет'}
 """
-    )
+        )
+
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="🏢 Бизнесы",
-                    callback_data="biz"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="📂 Категории",
-                    callback_data="categories"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="ℹ️ Помощь",
-                    callback_data="help"
-                )
-            ]
+            [InlineKeyboardButton(text="🏢 Бизнесы", callback_data="biz")],
+            [InlineKeyboardButton(text="📂 Категории", callback_data="categories")],
+            [InlineKeyboardButton(text="ℹ️ Помощь", callback_data="help")]
         ]
     )
 
@@ -250,7 +236,6 @@ if not user:
         "Добро пожаловать!",
         reply_markup=kb
     )
-    
 @dp.message(Command("business"))
 async def business(message: Message):
     
