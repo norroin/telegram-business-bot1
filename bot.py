@@ -25,6 +25,15 @@ dp = Dispatcher()
 db = sqlite3.connect("/data/database.db")
 cur = db.cursor()
 
+cur.execute("""
+CREATE TABLE IF NOT EXISTS bugs(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    text TEXT,
+    date TEXT
+)
+""")
+
 def add_column(sql):
     try:
         cur.execute(sql)
