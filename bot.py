@@ -28,6 +28,18 @@ cur = db.cursor()
 def add_column(sql):
     try:
         cur.execute(sql)
+    except:
+        pass
+
+add_column("ALTER TABLE bugs ADD COLUMN user_id INTEGER")
+add_column("ALTER TABLE bugs ADD COLUMN text TEXT")
+add_column("ALTER TABLE bugs ADD COLUMN date TEXT")
+
+db.commit()
+
+def add_column(sql):
+    try:
+        cur.execute(sql)
     except sqlite3.OperationalError:
         pass
 
