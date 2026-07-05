@@ -40,6 +40,19 @@ db.commit()
 CHANNEL_ID = -1002484763518
 OWNER_ID = 5639087435
 
+def add_column(sql):
+    try:
+        cur.execute(sql)
+    except:
+        pass
+
+add_column("ALTER TABLE admin_votes ADD COLUMN voter_id INTEGER")
+add_column("ALTER TABLE admin_votes ADD COLUMN admin_id INTEGER")
+add_column("ALTER TABLE admin_votes ADD COLUMN value INTEGER")
+add_column("ALTER TABLE admin_votes ADD COLUMN date TEXT")
+
+db.commit()
+
 async def check_sub(message: Message):
     try:
         member = await bot.get_chat_member(
