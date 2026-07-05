@@ -1070,6 +1070,7 @@ async def support(message: Message):
         "/rep - проголосовать за админа\n"
         "/topadmin - Топ репутации администрации\n"
         "/bug - отправить предложение по улучшению\n"
+        "/profile - посмотреть свой профиль\n"
     )
 
     if role >= 1:
@@ -1443,7 +1444,8 @@ async def set_commands(bot):
         BotCommand(command="rep", description="Проголосвать за репутацию"),
         BotCommand(command="topadmin", description="топ репутации администрации"),
         BotCommand(command="bug", description="Отправить предложение по улучшению"),
-        BotCommand(command="bc", description="Посмотреть активные битвы семей")
+        BotCommand(command="bc", description="Посмотреть активные битвы семей"),
+        BotCommand(command="profile", description="Посмотреть профиль")
     ]
 
     await bot.set_my_commands(commands)
