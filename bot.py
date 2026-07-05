@@ -19,7 +19,6 @@ import os
 TOKEN = os.getenv("TOKEN")
 ADMINS = [5639087435] 
 
-print(f"TOKEN = {TOKEN}")
 bot = Bot(TOKEN)
 dp = Dispatcher()
 
@@ -120,6 +119,15 @@ CREATE TABLE IF NOT EXISTS family_battle(
 )
 """)
 
+cur.execute("""
+CREATE TABLE IF NOT EXISTS users(
+    user_id INTEGER PRIMARY KEY,
+    username TEXT,
+    first_name TEXT,
+    reg_date TEXT
+)
+""")
+
 db.commit()
 
 def get_role(user_id):
@@ -186,12 +194,35 @@ async def start(message: Message):
         await require_sub(message)
         return
 
+cur.execute(
+    "SELECT user_id FROM users WHERE user_id=?",
+    (message.from_user.id,)
+)
+
+user = cur.fetchone()
+
+if not user:
     cur.execute(
-        "INSERT OR IGNORE INTO users(user_id) VALUES(?)",
-        (message.from_user.id,)
+        "INSERT INTO users(user_id, username, first_name, reg_date) VALUES(?,?,?,?)",
+        (
+            message.from_user.id,
+            message.from_user.username,
+            message.from_user.full_name,
+            datetime.now().strftime("%d.%m.%Y")
+        )
     )
     db.commit()
 
+    await bot.send_message(
+        OWNER_ID,
+        f"""
+🆕 Новый пользователь
+
+👤 {message.from_user.full_name}
+🆔 {message.from_user.id}
+🔗 @{message.from_user.username if message.from_user.username else 'нет'}
+"""
+    )
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
             [
@@ -2096,6 +2127,73 @@ async def delbs(message: Message):
     db.commit()
 
     await message.answer("✅ Активная битва семей удалена.")
+
+@dp.message(Command("profile"))
+async def profile(message: Message):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+
+    cur.execute(
+        """
+        SELECT reg_date
+        FROM users
+        WHERE user_id=?
+        """,
+        (message.from_user.id,)
+    )
+
+    row = cur.fetchone()
+
+    if row:
+        reg = row[0]
+    else:
+        reg = "Неизвестно"
+
+    role = "Пользователь"
+
+    if message.from_user.id in ADMINS:
+        role = "Редактор"
+
+    if is_creator(message.from_user.id):
+        role = "Создатель"
+
+    cur.execute(
+        "SELECT COUNT(*) FROM admin_votes WHERE voter_id=?",
+        (message.from_user.id,)
+    )
+    votes = cur.fetchone()[0]
+
+    cur.execute(
+        "SELECT COUNT(*) FROM bugs WHERE user_id=?",
+        (message.from_user.id,)
+    )
+    bugs = cur.fetchone()[0]
+
+    await message.answer(
+        f"""
+👤 <b>Профиль пользователя</b>
+
+🆔 ID: <code>{message.from_user.id}</code>
+
+👤 Ник:
+{message.from_user.full_name}
+
+📅 Регистрация:
+{reg}
+
+⭐ Роль:
+{role}
+
+❤️ Голосов отдано:
+{votes}
+
+🐞 Предложений:
+{bugs}
+""",
+        parse_mode="HTML"
+    )
 
 @dp.message()
 async def save_chat(message: Message):
