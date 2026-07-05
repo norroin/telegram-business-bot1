@@ -15,7 +15,7 @@ from aiogram.types import (
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
-TOKEN = "8568105038:AAHVmeBwvYrcTqwMPEokNWrLLt5Ka8XJs10"
+TOKEN = "8568105038:AAEauzqtml4WawpqAmOY3K1tiCaZB-GjBKU"
 ADMINS = [5639087435] 
 
 bot = Bot(TOKEN)
