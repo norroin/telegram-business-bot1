@@ -25,6 +25,18 @@ dp = Dispatcher()
 db = sqlite3.connect("/data/database.db")
 cur = db.cursor()
 
+def add_column(sql):
+    try:
+        cur.execute(sql)
+    except sqlite3.OperationalError:
+        pass
+
+add_column("ALTER TABLE users ADD COLUMN username TEXT")
+add_column("ALTER TABLE users ADD COLUMN first_name TEXT")
+add_column("ALTER TABLE users ADD COLUMN reg_date TEXT")
+
+db.commit()
+
 CHANNEL_ID = -1002484763518
 OWNER_ID = 5639087435
 
