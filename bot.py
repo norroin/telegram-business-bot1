@@ -19,6 +19,7 @@ import os
 TOKEN = os.getenv("TOKEN")
 ADMINS = [5639087435] 
 
+print(f"TOKEN = {TOKEN}")
 bot = Bot(TOKEN)
 dp = Dispatcher()
 
