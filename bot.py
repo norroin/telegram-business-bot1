@@ -2200,58 +2200,71 @@ async def profile(message: Message):
         await require_sub(message)
         return
 
-    await register_user(message)
+    args = message.text.split()
+
+    # По умолчанию — свой профиль
+    target_id = message.from_user.id
+
+    # Если ответ на сообщение
+    if message.reply_to_message:
+        target_id = message.reply_to_message.from_user.id
+
+    # Если указан ID
+    elif len(args) == 2:
+        if args[1].isdigit():
+            target_id = int(args[1])
+        else:
+            await message.answer("Укажите корректный ID.")
+            return
 
     cur.execute(
         """
-        SELECT reg_date
+        SELECT first_name, username, reg_date
         FROM users
         WHERE user_id=?
         """,
-        (message.from_user.id,)
+        (target_id,)
     )
 
-    row = cur.fetchone()
+    user = cur.fetchone()
 
-    if row:
-        reg = row[0]
-    else:
-        reg = "Неизвестно"
+    if not user:
+        await message.answer("Пользователь не найден.")
+        return
+
+    first_name, username, reg_date = user
 
     role = "Пользователь"
 
-    if message.from_user.id in ADMINS:
+    if target_id in ADMINS:
         role = "Редактор"
 
-    if is_creator(message.from_user.id):
+    if is_creator(target_id):
         role = "Создатель"
 
     cur.execute(
         "SELECT COUNT(*) FROM admin_votes WHERE voter_id=?",
-        (message.from_user.id,)
+        (target_id,)
     )
     votes = cur.fetchone()[0]
-
-    cur.execute(
-        "SELECT COUNT(*) FROM bugs WHERE user_id=?",
-        (message.from_user.id,)
-    )
-    bugs = cur.fetchone()[0]
 
     await message.answer(
         f"""
 👤 <b>Профиль пользователя</b>
 
-🆔 ID: <code>{message.from_user.id}</code>
+🆔 ID: <code>{target_id}</code>
 
 👤 Ник:
-{message.from_user.full_name}
+{first_name}
 
-📅 Регистрация:
-{reg}
+🔗 Username:
+@{username if username else 'нет'}
 
 ⭐ Роль:
 {role}
+
+📅 Регистрация:
+{reg_date}
 
 ❤️ Голосов отдано:
 {votes}
