@@ -25,14 +25,6 @@ dp = Dispatcher()
 db = sqlite3.connect("/data/database.db")
 cur = db.cursor()
 
-cur.execute("""
-CREATE TABLE IF NOT EXISTS bugs(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    text TEXT,
-    date TEXT
-)
-""")
 
 def add_column(sql):
     try:
@@ -107,6 +99,39 @@ async def require_sub(message: Message):
         "❌ Для использования бота необходимо подписаться на канал.",
         reply_markup=kb
     )
+
+async def register_user(message: Message):
+    cur.execute(
+        "SELECT user_id FROM users WHERE user_id=?",
+        (message.from_user.id,)
+    )
+
+    user = cur.fetchone()
+
+    if not user:
+        cur.execute(
+            """
+            INSERT INTO users(user_id, username, first_name, reg_date)
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                message.from_user.id,
+                message.from_user.username,
+                message.from_user.full_name,
+                datetime.now().strftime("%d.%m.%Y")
+            )
+        )
+        db.commit()
+
+        await bot.send_message(
+            OWNER_ID,
+            f"""🆕 Новый пользователь
+
+👤 {message.from_user.full_name}
+🆔 {message.from_user.id}
+🔗 @{message.from_user.username if message.from_user.username else 'нет'}
+"""
+        )
 
 cur.execute("""
 CREATE TABLE IF NOT EXISTS businesses(
@@ -232,6 +257,8 @@ async def start(message: Message):
         await require_sub(message)
         return
 
+    await register_user(message)
+    
     cur.execute(
         "SELECT user_id FROM users WHERE user_id=?",
         (message.from_user.id,)
@@ -280,6 +307,8 @@ async def business(message: Message):
     if not await check_sub(message):
         await require_sub(message)
         return
+
+    await register_user(message)
     
     args = message.text.split(maxsplit=1)
 
@@ -377,6 +406,8 @@ async def bizlist(message: Message):
     if not await check_sub(message):
         await require_sub(message)
         return
+
+    await register_user(message)
     
     cur.execute(
         "SELECT id, name FROM businesses ORDER BY id"
@@ -1022,6 +1053,8 @@ async def categories(message: Message):
     if not await check_sub(message):
         await require_sub(message)
         return
+
+    await register_user(message)
     
     cur.execute(
         """
@@ -1052,6 +1085,8 @@ async def support(message: Message):
     if not await check_sub(message):
         await require_sub(message)
         return
+
+    await register_user(message)
 
     role = get_role(message.from_user.id)
 
@@ -1554,6 +1589,8 @@ async def admin_list(message: Message):
         await require_sub(message)
         return
 
+    await register_user(message)
+
     cur.execute(
         """
         SELECT id, nickname, position
@@ -1587,6 +1624,9 @@ async def iadmin(message: Message):
     if not await check_sub(message):
         await require_sub(message)
         return
+
+    await register_user(message)
+    
 
     args = message.text.split()
 
@@ -2160,6 +2200,8 @@ async def profile(message: Message):
         await require_sub(message)
         return
 
+    await register_user(message)
+
     cur.execute(
         """
         SELECT reg_date
@@ -2213,9 +2255,6 @@ async def profile(message: Message):
 
 ❤️ Голосов отдано:
 {votes}
-
-🐞 Предложений:
-{bugs}
 """,
         parse_mode="HTML"
     )
