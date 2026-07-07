@@ -2294,6 +2294,8 @@ async def zbt(message: Message):
         await require_sub(message)
         return
 
+    await register_user(message)
+    
     cur.execute("""
         SELECT chat_id, message_id
         FROM zbt_posts
