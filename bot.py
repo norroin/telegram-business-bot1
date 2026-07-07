@@ -38,6 +38,8 @@ add_column("ALTER TABLE bugs ADD COLUMN date TEXT")
 
 db.commit()
 
+waiting_zbt = set()
+
 def add_column(sql):
     try:
         cur.execute(sql)
@@ -191,6 +193,14 @@ CREATE TABLE IF NOT EXISTS family_battle(
 """)
 
 
+cur.execute("""
+CREATE TABLE IF NOT EXISTS zbt_posts(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    chat_id INTEGER,
+    message_id INTEGER
+)
+""")
+
 db.commit()
 
 def get_role(user_id):
@@ -240,6 +250,7 @@ class ChangeLocation(StatesGroup):
 class UploadPhoto(StatesGroup):
     business_id = State()
     photo = State()
+
 
 class ChangePhotoCmd(StatesGroup):
     business_id = State()
@@ -1097,6 +1108,7 @@ async def support(message: Message):
         "/business ID - информация о бизнесе\n"
         "/business Категория - поиск по категории\n"
         "/bizlist - список бизнесов\n"
+        "/zbt - список збт\n"
         "/categories - список категорий\n"
         "/role - моя роль\n"
         "/support - справка\n"
@@ -1474,13 +1486,16 @@ async def set_commands(bot):
         BotCommand(command="admin", description="Список администрации"),
         BotCommand(command="iadmin", description="Информация о админе"),
         BotCommand(command="deladm", description="Удалить админа из списка"),
-        BotCommand(command="dadmin", description="Изменить должность"),
+        BotCommand(command="dadm", description="Изменить должность"),
         BotCommand(command="admin", description="Список администрации"),
         BotCommand(command="rep", description="Проголосвать за репутацию"),
         BotCommand(command="topadmin", description="топ репутации администрации"),
         BotCommand(command="bug", description="Отправить предложение по улучшению"),
         BotCommand(command="bc", description="Посмотреть активные битвы семей"),
-        BotCommand(command="profile", description="Посмотреть профиль")
+        BotCommand(command="profile", description="Посмотреть профиль"),
+        BotCommand(command="zbt", description="Открыть список збт"),
+        BotCommand(command="addzbt", description="Добавить пост о збт"),
+        BotCommand(command="del", description="Удалить пост о збт")
     ]
 
     await bot.set_my_commands(commands)
@@ -2271,6 +2286,89 @@ async def profile(message: Message):
 """,
         parse_mode="HTML"
     )
+
+@dp.message(Command("zbt"))
+async def zbt(message: Message):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+
+    cur.execute("""
+        SELECT chat_id, message_id
+        FROM zbt_posts
+        ORDER BY id
+    """)
+
+    posts = cur.fetchall()
+
+    if not posts:
+        await message.answer("Постов пока нет.")
+        return
+
+    for chat_id, message_id in posts:
+
+        await bot.copy_message(
+            chat_id=message.from_user.id,
+            from_chat_id=chat_id,
+            message_id=message_id
+        )
+
+@dp.message(Command("delzbt"))
+async def delzbt(message: Message):
+
+    if not is_creator(message.from_user.id):
+        return
+
+    args = message.text.split()
+
+    if len(args) != 2:
+        await message.answer("Пример:\n/delzbt 1")
+        return
+
+    cur.execute(
+        "DELETE FROM zbt_posts WHERE id=?",
+        (args[1],)
+    )
+
+    db.commit()
+
+    await message.answer("✅ Пост удалён.")
+
+@dp.message(Command("addzbt"))
+async def addzbt(message: Message):
+
+    if not is_creator(message.from_user.id):
+        return
+
+    waiting_zbt.add(message.from_user.id)
+
+    await message.answer(
+        "📨 Отправьте готовый пост (текст, фото, документ, видео и т.д.)"
+    )
+
+@dp.message()
+async def save_zbt(message: Message):
+
+    if message.from_user.id not in waiting_zbt:
+        return
+
+    waiting_zbt.remove(message.from_user.id)
+
+    cur.execute(
+        """
+        INSERT INTO zbt_posts(chat_id, message_id)
+        VALUES(?, ?)
+        """,
+        (
+            message.chat.id,
+            message.message_id
+        )
+    )
+
+    db.commit()
+
+    await message.answer("✅ Пост успешно сохранён.")
 
 @dp.message()
 async def save_chat(message: Message):
