@@ -2350,29 +2350,6 @@ async def addzbt(message: Message):
         "📨 Отправьте готовый пост (текст, фото, документ, видео и т.д.)"
     )
 
-@dp.message()
-async def save_zbt(message: Message):
-
-    if message.from_user.id not in waiting_zbt:
-        return
-
-    waiting_zbt.remove(message.from_user.id)
-
-    cur.execute(
-        """
-        INSERT INTO zbt_posts(chat_id, message_id)
-        VALUES(?, ?)
-        """,
-        (
-            message.chat.id,
-            message.message_id
-        )
-    )
-
-    db.commit()
-
-    await message.answer("✅ Пост успешно сохранён.")
-
 @dp.message(Command("unbani"))
 async def unbani(message: Message):
 
@@ -2433,6 +2410,30 @@ async def bani(message: Message):
 
     except Exception as e:
         await message.answer(f"Ошибка:\n{e}")
+
+@dp.message()
+async def save_zbt(message: Message):
+
+    if message.from_user.id not in waiting_zbt:
+        return
+
+    waiting_zbt.remove(message.from_user.id)
+
+    cur.execute(
+        """
+        INSERT INTO zbt_posts(chat_id, message_id)
+        VALUES(?, ?)
+        """,
+        (
+            message.chat.id,
+            message.message_id
+        )
+    )
+
+    db.commit()
+
+    await message.answer("✅ Пост успешно сохранён.")
+
 
 @dp.message()
 async def save_chat(message: Message):
