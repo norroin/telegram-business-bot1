@@ -6,6 +6,7 @@ import asyncio
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
 from aiogram.types import BotCommand
+from aiogram.methods import BanChatMember
 from aiogram.types import (
     Message,
     CallbackQuery,
@@ -2371,6 +2372,65 @@ async def save_zbt(message: Message):
     db.commit()
 
     await message.answer("✅ Пост успешно сохранён.")
+
+@dp.message(Command("unbani"))
+async def unbani(message: Message):
+
+    if not is_creator(message.from_user.id):
+        return
+
+    if message.chat.type == "private":
+        await message.answer("Команда работает только в группах.")
+        return
+
+    if not message.reply_to_message:
+        await message.answer("Ответьте на сообщение пользователя.")
+        return
+
+    user = message.reply_to_message.from_user
+
+    try:
+        await bot.unban_chat_member(
+            chat_id=message.chat.id,
+            user_id=user.id,
+            only_if_banned=True
+        )
+
+        await message.answer(
+            f"✅ {user.full_name} был разбанен."
+        )
+
+    except Exception as e:
+        await message.answer(f"Ошибка:\n{e}")
+
+@dp.message(Command("bani"))
+async def bani(message: Message):
+
+    if not is_creator(message.from_user.id):
+        return
+
+    if message.chat.type == "private":
+        await message.answer("Команда работает только в группах.")
+        return
+
+    if not message.reply_to_message:
+        await message.answer("Ответьте на сообщение пользователя.")
+        return
+
+    user = message.reply_to_message.from_user
+
+    try:
+        await bot.ban_chat_member(
+            chat_id=message.chat.id,
+            user_id=user.id
+        )
+
+        await message.answer(
+            f"✅ {user.full_name} был заблокирован."
+        )
+
+    except Exception as e:
+        await message.answer(f"Ошибка:\n{e}")
 
 @dp.message()
 async def save_chat(message: Message):
