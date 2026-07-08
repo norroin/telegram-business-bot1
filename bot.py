@@ -2406,6 +2406,8 @@ async def unbani(message: Message):
 @dp.message(Command("bani"))
 async def bani(message: Message):
 
+    print("BANI COMMAND")
+
     if not is_creator(message.from_user.id):
         return
 
