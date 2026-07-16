@@ -1,6 +1,6 @@
 
 import os
-import sqlite3
+import psycopg
 import asyncio
 
 from aiogram import Bot, Dispatcher, F
@@ -23,51 +23,15 @@ ADMINS = [5639087435]
 bot = Bot(TOKEN)
 dp = Dispatcher()
 
-db = sqlite3.connect("/data/database.db")
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+db = psycopg.connect(DATABASE_URL)
 cur = db.cursor()
-
-
-def add_column(sql):
-    try:
-        cur.execute(sql)
-    except:
-        pass
-
-add_column("ALTER TABLE bugs ADD COLUMN user_id INTEGER")
-add_column("ALTER TABLE bugs ADD COLUMN text TEXT")
-add_column("ALTER TABLE bugs ADD COLUMN date TEXT")
-
-db.commit()
 
 waiting_zbt = set()
 
-def add_column(sql):
-    try:
-        cur.execute(sql)
-    except sqlite3.OperationalError:
-        pass
-
-add_column("ALTER TABLE users ADD COLUMN username TEXT")
-add_column("ALTER TABLE users ADD COLUMN first_name TEXT")
-add_column("ALTER TABLE users ADD COLUMN reg_date TEXT")
-
-db.commit()
-
 CHANNEL_ID = -1002484763518
 OWNER_ID = 5639087435
-
-def add_column(sql):
-    try:
-        cur.execute(sql)
-    except:
-        pass
-
-add_column("ALTER TABLE admin_votes ADD COLUMN voter_id INTEGER")
-add_column("ALTER TABLE admin_votes ADD COLUMN admin_id INTEGER")
-add_column("ALTER TABLE admin_votes ADD COLUMN value INTEGER")
-add_column("ALTER TABLE admin_votes ADD COLUMN date TEXT")
-
-db.commit()
 
 async def check_sub(message: Message):
     try:
