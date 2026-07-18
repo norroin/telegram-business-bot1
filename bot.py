@@ -8,7 +8,8 @@ from aiogram.types import (
     Message,
     CallbackQuery,
     InlineKeyboardMarkup,
-    InlineKeyboardButton
+    InlineKeyboardButton,
+    BotCommand
 )
 
 from aiogram.fsm.state import StatesGroup, State
