@@ -1,32 +1,27 @@
 
 import os
-import psycopg
 import asyncio
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
-from aiogram.types import BotCommand
-from aiogram.methods import BanChatMember
 from aiogram.types import (
     Message,
     CallbackQuery,
     InlineKeyboardMarkup,
     InlineKeyboardButton
 )
+
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
-import os
+
+from database import cur, db
+
 
 TOKEN = os.getenv("TOKEN")
-ADMINS = [5639087435] 
+ADMINS = [5639087435]
 
 bot = Bot(TOKEN)
 dp = Dispatcher()
-
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-db = psycopg.connect(DATABASE_URL)
-cur = db.cursor()
 
 waiting_zbt = set()
 
@@ -69,7 +64,7 @@ async def require_sub(message: Message):
 
 async def register_user(message: Message):
     cur.execute(
-        "SELECT user_id FROM users WHERE user_id=?",
+        "SELECT user_id FROM users WHERE user_id=%s",
         (message.from_user.id,)
     )
 
@@ -79,7 +74,7 @@ async def register_user(message: Message):
         cur.execute(
             """
             INSERT INTO users(user_id, username, first_name, reg_date)
-            VALUES (?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s)
             """,
             (
                 message.from_user.id,
@@ -100,77 +95,10 @@ async def register_user(message: Message):
 """
         )
 
-cur.execute("""
-CREATE TABLE IF NOT EXISTS businesses(
-    id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL,
-    owner TEXT NOT NULL,
-    location TEXT NOT NULL,
-    photo_id TEXT,
-    category TEXT
-)
-""")
-
-cur.execute("""
-CREATE TABLE IF NOT EXISTS roles(
-    user_id INTEGER PRIMARY KEY,
-    role INTEGER DEFAULT 0
-)
-""")
-
-cur.execute("""
-CREATE TABLE IF NOT EXISTS logs(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    action TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)
-""")
-
-cur.execute("""
-CREATE TABLE IF NOT EXISTS admin_votes(
-    user_id INTEGER,
-    admin_id INTEGER,
-    vote INTEGER,
-    voted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY(user_id, admin_id)
-)
-""")
-
-cur.execute("""
-CREATE TABLE IF NOT EXISTS users(
-    user_id INTEGER PRIMARY KEY
-)
-""")
-
-cur.execute("""
-CREATE TABLE IF NOT EXISTS chats(
-    chat_id INTEGER PRIMARY KEY
-)
-""")
-
-cur.execute("""
-CREATE TABLE IF NOT EXISTS family_battle(
-    id INTEGER PRIMARY KEY,
-    location TEXT,
-    end_time TIMESTAMP
-)
-""")
-
-
-cur.execute("""
-CREATE TABLE IF NOT EXISTS zbt_posts(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    chat_id INTEGER,
-    message_id INTEGER
-)
-""")
-
-db.commit()
 
 def get_role(user_id):
     row = cur.execute(
-        "SELECT role FROM roles WHERE user_id=?",
+        "SELECT role FROM roles WHERE user_id=%s",
         (user_id,)
     ).fetchone()
 
@@ -191,7 +119,7 @@ def add_log(user_id, action):
     cur.execute(
         """
         INSERT INTO logs(user_id, action)
-        VALUES(?, ?)
+        VALUES(%s, %s)
         """,
         (user_id, action)
     )
@@ -236,7 +164,7 @@ async def start(message: Message):
     await register_user(message)
     
     cur.execute(
-        "SELECT user_id FROM users WHERE user_id=?",
+        "SELECT user_id FROM users WHERE user_id=%s",
         (message.from_user.id,)
     )
 
@@ -244,7 +172,7 @@ async def start(message: Message):
 
     if not user:
         cur.execute(
-            "INSERT INTO users(user_id, username, first_name, reg_date) VALUES(?,?,?,?)",
+            "INSERT INTO users(user_id, username, first_name, reg_date) VALUES(%s,%s,%s,%s)",
             (
                 message.from_user.id,
                 message.from_user.username,
@@ -302,7 +230,7 @@ async def business(message: Message):
             """
             SELECT name, owner, location, photo_id, category
             FROM businesses
-            WHERE id=?
+            WHERE id=%s
             """,
             (search,)
         )
@@ -334,7 +262,7 @@ async def business(message: Message):
         """
         SELECT id, name
         FROM businesses
-        WHERE name LIKE ?
+        WHERE name LIKE %s
         ORDER BY name
         """,
         (f"%{search}%",)
@@ -356,7 +284,7 @@ async def business(message: Message):
         """
         SELECT id, name
         FROM businesses
-        WHERE category=?
+        WHERE category=%s
         ORDER BY name
         """,
         (search,)
@@ -488,7 +416,7 @@ async def add_id(message: Message, state: FSMContext):
         return
 
     cur.execute(
-        "SELECT id FROM businesses WHERE id=?",
+        "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
     )
 
@@ -542,7 +470,7 @@ async def add_location(message: Message, state: FSMContext):
         """
         INSERT INTO businesses
         (id, name, owner, category, location)
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (%s, %s, %s, %s, %s)
         """,
         (
             data["id"],
@@ -589,7 +517,7 @@ async def owner_save(message: Message, state: FSMContext):
     data = await state.get_data()
 
     cur.execute(
-        "UPDATE businesses SET owner=? WHERE id=?",
+        "UPDATE businesses SET owner=%s WHERE id=%s",
         (message.text, data["id"])
     )
     db.commit()
@@ -628,7 +556,7 @@ async def location_save(message: Message, state: FSMContext):
     data = await state.get_data()
 
     cur.execute(
-        "UPDATE businesses SET location=? WHERE id=?",
+        "UPDATE businesses SET location=%s WHERE id=%s",
         (message.text, data["id"])
     )
     db.commit()
@@ -669,7 +597,7 @@ async def photo_save(message: Message, state: FSMContext):
     photo_id = message.photo[-1].file_id
 
     cur.execute(
-        "UPDATE businesses SET photo_id=? WHERE id=?",
+        "UPDATE businesses SET photo_id=%s WHERE id=%s",
         (photo_id, data["id"])
     )
     db.commit()
@@ -711,7 +639,7 @@ async def set_role(message: Message):
         """
         INSERT OR REPLACE INTO roles
         (user_id, role)
-        VALUES (?,?)
+        VALUES (%s,%s)
         """,
         (user_id, role)
     )
@@ -745,7 +673,7 @@ async def cbiz(message: Message):
     category = args[2]
 
     cur.execute(
-        "UPDATE businesses SET category=? WHERE id=?",
+        "UPDATE businesses SET category=%s WHERE id=%s",
         (category, business_id)
     )
     db.commit()
@@ -772,7 +700,7 @@ async def delcbiz(message: Message):
         return
 
     cur.execute(
-        "UPDATE businesses SET category=NULL WHERE id=?",
+        "UPDATE businesses SET category=NULL WHERE id=%s",
         (args[1],)
     )
 
@@ -805,7 +733,7 @@ async def nbiz(message: Message):
     new_name = args[2]
 
     cur.execute(
-        "SELECT id FROM businesses WHERE id=?",
+        "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
     )
 
@@ -814,7 +742,7 @@ async def nbiz(message: Message):
         return
 
     cur.execute(
-        "UPDATE businesses SET name=? WHERE id=?",
+        "UPDATE businesses SET name=%s WHERE id=%s",
         (new_name, business_id)
     )
 
@@ -847,7 +775,7 @@ async def lbiz(message: Message):
     new_location = args[2]
 
     cur.execute(
-        "SELECT id FROM businesses WHERE id=?",
+        "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
     )
 
@@ -856,7 +784,7 @@ async def lbiz(message: Message):
         return
 
     cur.execute(
-        "UPDATE businesses SET location=? WHERE id=?",
+        "UPDATE businesses SET location=%s WHERE id=%s",
         (new_location, business_id)
     )
 
@@ -888,7 +816,7 @@ async def delbiz(message: Message):
     business_id = args[1]
 
     cur.execute(
-        "SELECT id FROM businesses WHERE id=?",
+        "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
     )
 
@@ -897,7 +825,7 @@ async def delbiz(message: Message):
         return
 
     cur.execute(
-        "DELETE FROM businesses WHERE id=?",
+        "DELETE FROM businesses WHERE id=%s",
         (business_id,)
     )
 
@@ -935,7 +863,7 @@ async def vbiz(message: Message):
     new_owner = args[2]
 
     cur.execute(
-        "SELECT id FROM businesses WHERE id=?",
+        "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
     )
 
@@ -944,7 +872,7 @@ async def vbiz(message: Message):
         return
 
     cur.execute(
-        "UPDATE businesses SET owner=? WHERE id=?",
+        "UPDATE businesses SET owner=%s WHERE id=%s",
         (new_owner, business_id)
     )
 
@@ -981,7 +909,7 @@ async def fbiz(message: Message, state: FSMContext):
     business_id = args[1]
 
     cur.execute(
-        "SELECT id FROM businesses WHERE id=?",
+        "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
     )
 
@@ -1011,7 +939,7 @@ async def fbiz_save(message: Message, state: FSMContext):
     photo_id = message.photo[-1].file_id
 
     cur.execute(
-        "UPDATE businesses SET photo_id=? WHERE id=?",
+        "UPDATE businesses SET photo_id=%s WHERE id=%s",
         (photo_id, data["id"])
     )
 
@@ -1299,7 +1227,7 @@ async def addbiz(message: Message):
         return
 
     cur.execute(
-        "SELECT id FROM businesses WHERE id=?",
+        "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
     )
 
@@ -1313,7 +1241,7 @@ async def addbiz(message: Message):
         """
         INSERT INTO businesses
         (id, name, owner, location, category)
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (%s, %s, %s, %s, %s)
         """,
         (
             business_id,
@@ -1531,7 +1459,7 @@ async def addadm(message: Message):
     position = parts[3]
 
     cur.execute(
-        "SELECT id FROM admins WHERE id=?",
+        "SELECT id FROM admins WHERE id=%s",
         (admin_id,)
     )
 
@@ -1543,7 +1471,7 @@ async def addadm(message: Message):
         """
         INSERT INTO admins
         (id, nickname, vk, position, reputation)
-        VALUES (?, ?, ?, ?, 0)
+        VALUES (%s, %s, %s, %s, 0)
         """,
         (
             admin_id,
@@ -1625,7 +1553,7 @@ async def iadmin(message: Message):
     cur.execute("""
         SELECT id, nickname, vk, position, reputation
         FROM admins
-        WHERE id=?
+        WHERE id=%s
     """, (admin_id,))
 
     admin = cur.fetchone()
@@ -1698,7 +1626,7 @@ async def deladm(message: Message):
         return
 
     cur.execute(
-        "SELECT nickname FROM admins WHERE id=?",
+        "SELECT nickname FROM admins WHERE id=%s",
         (admin_id,)
     )
 
@@ -1711,7 +1639,7 @@ async def deladm(message: Message):
     nickname = admin[0]
 
     cur.execute(
-        "DELETE FROM admins WHERE id=?",
+        "DELETE FROM admins WHERE id=%s",
         (admin_id,)
     )
 
@@ -1754,7 +1682,7 @@ async def dadm(message: Message):
     new_position = args[2]
 
     cur.execute(
-        "SELECT nickname FROM admins WHERE id=?",
+        "SELECT nickname FROM admins WHERE id=%s",
         (admin_id,)
     )
 
@@ -1769,8 +1697,8 @@ async def dadm(message: Message):
     cur.execute(
         """
         UPDATE admins
-        SET position=?
-        WHERE id=?
+        SET position=%s
+        WHERE id=%s
         """,
         (
             new_position,
@@ -1818,7 +1746,7 @@ async def repadm(message: Message):
         return
 
     cur.execute(
-        "SELECT nickname FROM admins WHERE id=?",
+        "SELECT nickname FROM admins WHERE id=%s",
         (admin_id,)
     )
 
@@ -1833,8 +1761,8 @@ async def repadm(message: Message):
     cur.execute(
         """
         UPDATE admins
-        SET reputation=?
-        WHERE id=?
+        SET reputation=%s
+        WHERE id=%s
         """,
         (
             reputation,
@@ -1885,7 +1813,7 @@ async def rep(message: Message):
         return
 
     cur.execute(
-        "SELECT nickname FROM admins WHERE id=?",
+        "SELECT nickname FROM admins WHERE id=%s",
         (admin_id,)
     )
 
@@ -1899,7 +1827,7 @@ async def rep(message: Message):
         """
         SELECT vote
         FROM admin_votes
-        WHERE user_id=? AND admin_id=?
+        WHERE user_id=%s AND admin_id=%s
         """,
         (
             message.from_user.id,
@@ -1917,7 +1845,7 @@ async def rep(message: Message):
         """
         INSERT INTO admin_votes
         (user_id, admin_id, vote)
-        VALUES (?, ?, ?)
+        VALUES (%s, %s, %s)
         """,
         (
             message.from_user.id,
@@ -1929,8 +1857,8 @@ async def rep(message: Message):
     cur.execute(
         """
         UPDATE admins
-        SET reputation = reputation + ?
-        WHERE id=?
+        SET reputation = reputation + %s
+        WHERE id=%s
         """,
         (
             vote,
@@ -2116,7 +2044,7 @@ async def addbs(message: Message):
     cur.execute(
         """
         INSERT INTO family_battle(location, end_time)
-        VALUES(?, ?)
+        VALUES(%s, %s)
         """,
         (location, end_time)
     )
@@ -2201,7 +2129,7 @@ async def profile(message: Message):
         """
         SELECT first_name, username, reg_date
         FROM users
-        WHERE user_id=?
+        WHERE user_id=%s
         """,
         (target_id,)
     )
@@ -2223,7 +2151,7 @@ async def profile(message: Message):
         role = "Создатель"
 
     cur.execute(
-        "SELECT COUNT(*) FROM admin_votes WHERE voter_id=?",
+        "SELECT COUNT(*) FROM admin_votes WHERE voter_id=%s",
         (target_id,)
     )
     votes = cur.fetchone()[0]
@@ -2294,7 +2222,7 @@ async def delzbt(message: Message):
         return
 
     cur.execute(
-        "DELETE FROM zbt_posts WHERE id=?",
+        "DELETE FROM zbt_posts WHERE id=%s",
         (args[1],)
     )
 
@@ -2386,7 +2314,7 @@ async def save_zbt(message: Message):
     cur.execute(
         """
         INSERT INTO zbt_posts(chat_id, message_id)
-        VALUES(?, ?)
+        VALUES(%s, %s)
         """,
         (
             message.chat.id,
@@ -2405,7 +2333,7 @@ async def save_chat(message: Message):
     if message.chat.type in ["group", "supergroup"]:
 
         cur.execute(
-            "INSERT OR IGNORE INTO chats(chat_id) VALUES(?)",
+            "INSERT OR IGNORE INTO chats(chat_id) VALUES(%s)",
             (message.chat.id,)
         )
 

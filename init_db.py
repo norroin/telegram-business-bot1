@@ -78,5 +78,3 @@ for table in tables:
 db.commit()
 
 print("✅ PostgreSQL tables created.")
-
-
