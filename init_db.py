@@ -68,7 +68,17 @@ CREATE TABLE IF NOT EXISTS zbt_posts(
     chat_id BIGINT,
     message_id BIGINT
 )
+""",
+
 """
+CREATE TABLE IF NOT EXISTS admins(
+    id BIGINT PRIMARY KEY,
+    nickname TEXT,
+    vk TEXT,
+    position TEXT,
+    reputation INTEGER DEFAULT 0
+)
+""",
 
 ]
 
