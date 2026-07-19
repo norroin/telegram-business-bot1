@@ -1,6 +1,7 @@
 
 import os
 import asyncio
+import init_db
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
@@ -1491,8 +1492,8 @@ async def addadm(message: Message):
 
     await message.answer("✅ Администратор добавлен.")
 
-@dp.message(Command("admin"))
-async def admin_list(message: Message):
+@dp.message(Command("admins"))
+async def admins(message: Message):
 
     if not await check_sub(message):
         await require_sub(message)
@@ -1501,11 +1502,12 @@ async def admin_list(message: Message):
     await register_user(message)
 
     cur.execute(
-        """
-        SELECT id, nickname, position
-        FROM admins
-        ORDER BY id
-        """
+       """
+       SELECT user_id, role
+       FROM roles
+       WHERE role > 0
+       ORDER BY user_id
+       """
     )
 
     rows = cur.fetchall()
