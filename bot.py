@@ -1503,13 +1503,12 @@ async def admins(message: Message):
     await register_user(message)
 
     cur.execute(
-       """
-       SELECT user_id, role
-       FROM roles
-       WHERE role > 0
-       ORDER BY user_id
-       """
-    )
+        """
+        SELECT user_id, nickname, position
+        FROM admins
+        ORDER BY user_id
+        """
+)
 
     rows = cur.fetchall()
 
@@ -2154,7 +2153,7 @@ async def profile(message: Message):
     if is_creator(target_id):
         role = "Создатель"
 
-    await message.answer(
+        await message.answer(
         f"""
 👤 <b>Профиль пользователя</b>
 
