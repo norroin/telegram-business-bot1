@@ -614,7 +614,7 @@ async def set_role(message: Message):
     if not await check_sub(message):
         await require_sub(message)
         return
-    
+
     if message.from_user.id not in ADMINS:
         return
 
@@ -639,9 +639,10 @@ async def set_role(message: Message):
 
     cur.execute(
         """
-        INSERT OR REPLACE INTO roles
-        (user_id, role)
-        VALUES (%s,%s)
+        INSERT INTO roles (user_id, role)
+        VALUES (%s, %s)
+        ON CONFLICT (user_id)
+        DO UPDATE SET role = EXCLUDED.role
         """,
         (user_id, role)
     )
@@ -651,7 +652,7 @@ async def set_role(message: Message):
     await message.answer(
         f"Роль {role} выдана пользователю {user_id}"
     )
-
+    
 @dp.message(Command("cbiz"))
 async def cbiz(message: Message):
 
