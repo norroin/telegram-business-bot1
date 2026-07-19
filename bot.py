@@ -1001,12 +1001,10 @@ async def support(message: Message):
         "📖 Справка по командам\n\n"
 
         "👤 Пользователь:\n"
-        "/business ID - информация о бизнесе\n"
-        "/business Категория - поиск по категории\n"
+        "/business ID - информация о бизнесе/по категории \n"
         "/bizlist - список бизнесов\n"
         "/zbt - список збт\n"
         "/categories - список категорий\n"
-        "/role - моя роль\n"
         "/support - справка\n"
         "/admin - список администрации\n"
         "/iadmin - профиль админи\n"
@@ -1014,6 +1012,7 @@ async def support(message: Message):
         "/topadmin - Топ репутации администрации\n"
         "/bug - отправить предложение по улучшению\n"
         "/profile - посмотреть свой профиль\n"
+        "/bs - список активных битв \n"
     )
 
     if role >= 1:
@@ -1036,6 +1035,7 @@ async def support(message: Message):
             "/addadm ID - Добавить админа в список\n"
             "/delbiz ID - удалить бизнес\n"
             "/userrole ID - статус роли\n"
+            "/stats - cписок пользавателей \n"
             "/addbiz ID | Автоцентр Премиум | Иван Петров | Москва | Автосервис - создание бизнеса\n"
         )
 
@@ -1376,10 +1376,10 @@ async def set_commands(bot):
         BotCommand(command="bizlist", description="Список бизнесов"),
         BotCommand(command="categories", description="Список категорий"),
         BotCommand(command="support", description="Помощь"),
-        BotCommand(command="role", description="Моя роль"),
+        BotCommand(command="profile", description="Профиль пользователя"),
         BotCommand(command="vbiz", description="Изменение владельца"),
         BotCommand(command="fbiz", description="Изменение фотографии"),
-        BotCommand(command="admin", description="Список администрации"),
+        BotCommand(command="admins", description="Список администрации"),
         BotCommand(command="iadmin", description="Информация о админе"),
         BotCommand(command="deladm", description="Удалить админа из списка"),
         BotCommand(command="dadm", description="Изменить должность"),
@@ -1387,11 +1387,12 @@ async def set_commands(bot):
         BotCommand(command="rep", description="Проголосвать за репутацию"),
         BotCommand(command="topadmin", description="топ репутации администрации"),
         BotCommand(command="bug", description="Отправить предложение по улучшению"),
-        BotCommand(command="bc", description="Посмотреть активные битвы семей"),
+        BotCommand(command="bs", description="Посмотреть активные битвы семей"),
         BotCommand(command="profile", description="Посмотреть профиль"),
         BotCommand(command="zbt", description="Открыть список збт"),
         BotCommand(command="addzbt", description="Добавить пост о збт"),
-        BotCommand(command="del", description="Удалить пост о збт")
+        BotCommand(command="del", description="Удалить пост о збт"),
+        BotCommand(command="repadm", description="Изменить репутацию ")
     ]
 
     await bot.set_my_commands(commands)
