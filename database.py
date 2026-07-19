@@ -1,26 +1,72 @@
 import os
+
 import psycopg
+from psycopg_pool import ConnectionPool
 from dotenv import load_dotenv
 
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-db = psycopg.connect(DATABASE_URL)
-db.autocommit = True
+pool = ConnectionPool(
+    conninfo=DATABASE_URL,
+    min_size=1,
+    max_size=5,
+    open=True
+)
 
+db = pool.getconn()
+db.autocommit = True
 cur = db.cursor()
 
 
-def execute(query, params=None):
-    cur.execute(query, params or ())
-    return cur
+def reconnect():
+    global db, cur
+
+    try:
+        cur.close()
+    except Exception:
+        pass
+
+    try:
+        pool.putconn(db)
+    except Exception:
+        pass
+
+    db = pool.getconn()
+    db.autocommit = True
+    cur = db.cursor()
 
 
-def commit():
-    pass
+class SafeCursor:
+    def execute(self, query, params=None):
+        global cur
+
+        try:
+            return cur.execute(query, params)
+        except psycopg.OperationalError:
+            reconnect()
+            return cur.execute(query, params)
+
+    def fetchone(self):
+        return cur.fetchone()
+
+    def fetchall(self):
+        return cur.fetchall()
+
+    def __getattr__(self, name):
+        return getattr(cur, name)
+
+
+cur = SafeCursor()
 
 
 def close():
-    cur.close()
-    db.close()
+    global db
+
+    try:
+        pool.putconn(db)
+    except Exception:
+        pass
+
+    pool.close()
