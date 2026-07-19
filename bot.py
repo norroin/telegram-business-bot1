@@ -1503,12 +1503,12 @@ async def admins(message: Message):
     await register_user(message)
 
     cur.execute(
-        """
-        SELECT user_id, nickname, position
+         """
+        SELECT id, nickname, position
         FROM admins
-        ORDER BY user_id
+        ORDER BY id
         """
-)
+    )
 
     rows = cur.fetchall()
 
