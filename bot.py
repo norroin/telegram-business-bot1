@@ -652,7 +652,7 @@ async def set_role(message: Message):
     await message.answer(
         f"Роль {role} выдана пользователю {user_id}"
     )
-    
+
 @dp.message(Command("cbiz"))
 async def cbiz(message: Message):
 
@@ -2154,12 +2154,6 @@ async def profile(message: Message):
     if is_creator(target_id):
         role = "Создатель"
 
-    cur.execute(
-        "SELECT COUNT(*) FROM admin_votes WHERE voter_id=%s",
-        (target_id,)
-    )
-    votes = cur.fetchone()[0]
-
     await message.answer(
         f"""
 👤 <b>Профиль пользователя</b>
@@ -2178,8 +2172,6 @@ async def profile(message: Message):
 📅 Регистрация:
 {reg_date}
 
-❤️ Голосов отдано:
-{votes}
 """,
         parse_mode="HTML"
     )
