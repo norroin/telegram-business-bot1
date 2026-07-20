@@ -67,7 +67,7 @@ async def require_sub(message: Message):
     )
 
 
-async def register_user(message: Message):
+async def register_user(message: Message): 
     execute(
         "SELECT user_id FROM users WHERE user_id=%s",
         (message.from_user.id,)
@@ -88,6 +88,7 @@ async def register_user(message: Message):
                 datetime.now().strftime("%d.%m.%Y")
             )
         )
+
         db.commit()
 
         await bot.send_message(
