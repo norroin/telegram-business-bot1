@@ -57,15 +57,8 @@ async def require_sub(message: Message):
                 )
             ]
         ]
-    )
-
-    await message.answer(
-        "❌ Для использования бота необходимо подписаться на канал.",
-        reply_markup=kb
-    )
-
-async def register_user(message: Message):
-        execute(
+    async def register_user(message: Message):
+    execute(
         "SELECT user_id FROM users WHERE user_id=%s",
         (message.from_user.id,)
     )
@@ -73,7 +66,7 @@ async def register_user(message: Message):
     user = cur.fetchone()
 
     if not user:
-           execute(
+        execute(
             """
             INSERT INTO users(user_id, username, first_name, reg_date)
             VALUES (%s, %s, %s, %s)
@@ -260,7 +253,7 @@ async def business(message: Message):
         return
 
     # Поиск по названию
-       execute(
+        execute(
         """
         SELECT id, name
         FROM businesses
