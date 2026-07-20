@@ -180,7 +180,7 @@ async def start(message: Message):
         "Добро пожаловать!",
         reply_markup=kb
     )
-    
+
 @dp.message(Command("business"))
 async def business(message: Message):
     
@@ -289,7 +289,7 @@ async def bizlist(message: Message):
 
     await register_user(message)
     
-        execute(
+    execute(
         "SELECT id, name FROM businesses ORDER BY id"
     )
 
