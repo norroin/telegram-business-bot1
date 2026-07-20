@@ -16,7 +16,7 @@ from aiogram.types import (
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
-from database import cur, db
+from database import cur, db, execute
 
 
 TOKEN = os.getenv("TOKEN")
@@ -65,7 +65,7 @@ async def require_sub(message: Message):
     )
 
 async def register_user(message: Message):
-    cur.execute(
+        execute(
         "SELECT user_id FROM users WHERE user_id=%s",
         (message.from_user.id,)
     )
@@ -73,7 +73,7 @@ async def register_user(message: Message):
     user = cur.fetchone()
 
     if not user:
-        cur.execute(
+           execute(
             """
             INSERT INTO users(user_id, username, first_name, reg_date)
             VALUES (%s, %s, %s, %s)
@@ -99,7 +99,7 @@ async def register_user(message: Message):
 
 
 def get_role(user_id):
-    row = cur.execute(
+    row = execute(
         "SELECT role FROM roles WHERE user_id=%s",
         (user_id,)
     ).fetchone()
@@ -118,7 +118,7 @@ def is_creator(user_id):
     return get_role(user_id) >= 2
 
 def add_log(user_id, action):
-    cur.execute(
+       execute(
         """
         INSERT INTO logs(user_id, action)
         VALUES(%s, %s)
@@ -165,7 +165,7 @@ async def start(message: Message):
 
     await register_user(message)
     
-    cur.execute(
+        execute(
         "SELECT user_id FROM users WHERE user_id=%s",
         (message.from_user.id,)
     )
@@ -173,7 +173,7 @@ async def start(message: Message):
     user = cur.fetchone()
 
     if not user:
-        cur.execute(
+           execute(
             "INSERT INTO users(user_id, username, first_name, reg_date) VALUES(%s,%s,%s,%s)",
             (
                 message.from_user.id,
@@ -228,7 +228,7 @@ async def business(message: Message):
 
     # Поиск по ID
     if search.isdigit():
-        cur.execute(
+            execute(
             """
             SELECT name, owner, location, photo_id, category
             FROM businesses
@@ -260,7 +260,7 @@ async def business(message: Message):
         return
 
     # Поиск по названию
-    cur.execute(
+       execute(
         """
         SELECT id, name
         FROM businesses
@@ -282,7 +282,7 @@ async def business(message: Message):
         return
 
     # Поиск по категории
-    cur.execute(
+        execute(
         """
         SELECT id, name
         FROM businesses
@@ -315,7 +315,7 @@ async def bizlist(message: Message):
 
     await register_user(message)
     
-    cur.execute(
+        execute(
         "SELECT id, name FROM businesses ORDER BY id"
     )
 
@@ -417,7 +417,7 @@ async def add_id(message: Message, state: FSMContext):
         )
         return
 
-    cur.execute(
+        execute(
         "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
     )
@@ -468,7 +468,7 @@ async def add_location(message: Message, state: FSMContext):
     
     data = await state.get_data()
 
-    cur.execute(
+        execute(
         """
         INSERT INTO businesses
         (id, name, owner, category, location)
@@ -518,7 +518,7 @@ async def owner_save(message: Message, state: FSMContext):
     
     data = await state.get_data()
 
-    cur.execute(
+        execute(
         "UPDATE businesses SET owner=%s WHERE id=%s",
         (message.text, data["id"])
     )
@@ -557,7 +557,7 @@ async def location_save(message: Message, state: FSMContext):
     
     data = await state.get_data()
 
-    cur.execute(
+        execute(
         "UPDATE businesses SET location=%s WHERE id=%s",
         (message.text, data["id"])
     )
@@ -598,7 +598,7 @@ async def photo_save(message: Message, state: FSMContext):
 
     photo_id = message.photo[-1].file_id
 
-    cur.execute(
+        execute(
         "UPDATE businesses SET photo_id=%s WHERE id=%s",
         (photo_id, data["id"])
     )
@@ -637,7 +637,7 @@ async def set_role(message: Message):
         )
         return
 
-    cur.execute(
+        execute(
         """
         INSERT INTO roles (user_id, role)
         VALUES (%s, %s)
@@ -675,7 +675,7 @@ async def cbiz(message: Message):
     business_id = args[1]
     category = args[2]
 
-    cur.execute(
+        execute(
         "UPDATE businesses SET category=%s WHERE id=%s",
         (category, business_id)
     )
@@ -702,7 +702,7 @@ async def delcbiz(message: Message):
         )
         return
 
-    cur.execute(
+        execute(
         "UPDATE businesses SET category=NULL WHERE id=%s",
         (args[1],)
     )
@@ -735,7 +735,7 @@ async def nbiz(message: Message):
     business_id = args[1]
     new_name = args[2]
 
-    cur.execute(
+        execute(
         "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
     )
@@ -744,7 +744,7 @@ async def nbiz(message: Message):
         await message.answer("Бизнес не найден.")
         return
 
-    cur.execute(
+        execute(
         "UPDATE businesses SET name=%s WHERE id=%s",
         (new_name, business_id)
     )
@@ -777,7 +777,7 @@ async def lbiz(message: Message):
     business_id = args[1]
     new_location = args[2]
 
-    cur.execute(
+        execute(
         "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
     )
@@ -786,7 +786,7 @@ async def lbiz(message: Message):
         await message.answer("Бизнес не найден.")
         return
 
-    cur.execute(
+        execute(
         "UPDATE businesses SET location=%s WHERE id=%s",
         (new_location, business_id)
     )
@@ -818,7 +818,7 @@ async def delbiz(message: Message):
 
     business_id = args[1]
 
-    cur.execute(
+        execute(
         "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
     )
@@ -827,7 +827,7 @@ async def delbiz(message: Message):
         await message.answer("Бизнес не найден.")
         return
 
-    cur.execute(
+        execute(
         "DELETE FROM businesses WHERE id=%s",
         (business_id,)
     )
@@ -865,7 +865,7 @@ async def vbiz(message: Message):
     business_id = args[1]
     new_owner = args[2]
 
-    cur.execute(
+        execute(
         "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
     )
@@ -874,7 +874,7 @@ async def vbiz(message: Message):
         await message.answer("Бизнес не найден.")
         return
 
-    cur.execute(
+        execute(
         "UPDATE businesses SET owner=%s WHERE id=%s",
         (new_owner, business_id)
     )
@@ -911,7 +911,7 @@ async def fbiz(message: Message, state: FSMContext):
 
     business_id = args[1]
 
-    cur.execute(
+        execute(
         "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
     )
@@ -941,7 +941,7 @@ async def fbiz_save(message: Message, state: FSMContext):
 
     photo_id = message.photo[-1].file_id
 
-    cur.execute(
+        execute(
         "UPDATE businesses SET photo_id=%s WHERE id=%s",
         (photo_id, data["id"])
     )
@@ -963,7 +963,7 @@ async def categories(message: Message):
 
     await register_user(message)
     
-    cur.execute(
+        execute(
         """
         SELECT DISTINCT category
         FROM businesses
@@ -1109,7 +1109,7 @@ async def menu_bizlist(message: Message):
         await require_sub(message)
         return
     
-    cur.execute(
+        execute(
         "SELECT id, name FROM businesses ORDER BY id"
     )
 
@@ -1133,7 +1133,7 @@ async def menu_categories(message: Message):
         await require_sub(message)
         return    
 
-    cur.execute(
+        execute(
         """
         SELECT DISTINCT category
         FROM businesses
@@ -1229,7 +1229,7 @@ async def addbiz(message: Message):
         )
         return
 
-    cur.execute(
+        execute(
         "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
     )
@@ -1240,7 +1240,7 @@ async def addbiz(message: Message):
         )
         return
 
-    cur.execute(
+        execute(
         """
         INSERT INTO businesses
         (id, name, owner, location, category)
@@ -1274,7 +1274,7 @@ async def logs(message: Message):
         await message.answer("Недостаточно прав.")
         return
 
-    cur.execute(
+       execute(
         """
         SELECT user_id, action, created_at
         FROM logs
@@ -1307,7 +1307,7 @@ async def checkrole(message: Message):
         await require_sub(message)
         return
     
-    cur.execute(
+        execute(
         "SELECT * FROM roles"
     )
 
@@ -1326,7 +1326,7 @@ async def biz(callback: CallbackQuery):
 
     await bizlist(callback.message)
 
-    cur.execute(
+        execute(
         "SELECT id, name FROM businesses ORDER BY id"
     )
 
@@ -1462,7 +1462,7 @@ async def addadm(message: Message):
     vk = parts[2]
     position = parts[3]
 
-    cur.execute(
+        execute(
         "SELECT id FROM admins WHERE id=%s",
         (admin_id,)
     )
@@ -1471,7 +1471,7 @@ async def addadm(message: Message):
         await message.answer("Администратор с таким ID уже существует.")
         return
 
-    cur.execute(
+        execute(
         """
         INSERT INTO admins
         (id, nickname, vk, position, reputation)
@@ -1503,7 +1503,7 @@ async def admins(message: Message):
 
     await register_user(message)
 
-    cur.execute(
+        execute(
          """
         SELECT id, nickname, position
         FROM admins
@@ -1554,7 +1554,7 @@ async def iadmin(message: Message):
         await message.answer("ID должен быть числом.")
         return
 
-    cur.execute("""
+        execute("""
         SELECT id, nickname, vk, position, reputation
         FROM admins
         WHERE id=%s
@@ -1568,7 +1568,7 @@ async def iadmin(message: Message):
 
     admin_id, nickname, vk, position, reputation = admin
 
-    cur.execute("""
+        execute("""
         SELECT id
         FROM admins
         ORDER BY reputation DESC, nickname
@@ -1629,7 +1629,7 @@ async def deladm(message: Message):
         await message.answer("ID должен быть числом.")
         return
 
-    cur.execute(
+        execute(
         "SELECT nickname FROM admins WHERE id=%s",
         (admin_id,)
     )
@@ -1642,7 +1642,7 @@ async def deladm(message: Message):
 
     nickname = admin[0]
 
-    cur.execute(
+        execute(
         "DELETE FROM admins WHERE id=%s",
         (admin_id,)
     )
@@ -1685,7 +1685,7 @@ async def dadm(message: Message):
 
     new_position = args[2]
 
-    cur.execute(
+        execute(
         "SELECT nickname FROM admins WHERE id=%s",
         (admin_id,)
     )
@@ -1698,7 +1698,7 @@ async def dadm(message: Message):
 
     nickname = admin[0]
 
-    cur.execute(
+        execute(
         """
         UPDATE admins
         SET position=%s
@@ -1749,7 +1749,7 @@ async def repadm(message: Message):
         )
         return
 
-    cur.execute(
+        execute(
         "SELECT nickname FROM admins WHERE id=%s",
         (admin_id,)
     )
@@ -1762,7 +1762,7 @@ async def repadm(message: Message):
 
     nickname = admin[0]
 
-    cur.execute(
+        execute(
         """
         UPDATE admins
         SET reputation=%s
@@ -1816,7 +1816,7 @@ async def rep(message: Message):
         await message.answer("Используйте только + или -")
         return
 
-    cur.execute(
+        execute(
         "SELECT nickname FROM admins WHERE id=%s",
         (admin_id,)
     )
@@ -1827,7 +1827,7 @@ async def rep(message: Message):
         await message.answer("Администратор не найден.")
         return
 
-    cur.execute(
+        execute(
         """
         SELECT vote
         FROM admin_votes
@@ -1845,7 +1845,7 @@ async def rep(message: Message):
         )
         return
 
-    cur.execute(
+        execute(
         """
         INSERT INTO admin_votes
         (user_id, admin_id, vote)
@@ -1858,7 +1858,7 @@ async def rep(message: Message):
         )
     )
 
-    cur.execute(
+        execute(
         """
         UPDATE admins
         SET reputation = reputation + %s
@@ -1883,7 +1883,7 @@ async def topadmin(message: Message):
         await require_sub(message)
         return
 
-    cur.execute("""
+        execute("""
         SELECT nickname, position, reputation
         FROM admins
         ORDER BY reputation DESC, nickname
@@ -1970,7 +1970,7 @@ async def broadcast(message: Message):
     users_sent = 0
     chats_sent = 0
 
-    cur.execute("SELECT user_id FROM users")
+    execute("SELECT user_id FROM users")
 
     for (user_id,) in cur.fetchall():
         try:
@@ -1979,7 +1979,7 @@ async def broadcast(message: Message):
         except:
             pass
 
-    cur.execute("SELECT chat_id FROM chats")
+    execute("SELECT chat_id FROM chats")
 
     for (chat_id,) in cur.fetchall():
         try:
@@ -2000,16 +2000,16 @@ async def stats(message: Message):
     if not is_creator(message.from_user.id):
         return
 
-    cur.execute("SELECT COUNT(*) FROM users")
+    execute("SELECT COUNT(*) FROM users")
     users = cur.fetchone()[0]
 
-    cur.execute("SELECT COUNT(*) FROM chats")
+    execute("SELECT COUNT(*) FROM chats")
     chats = cur.fetchone()[0]
 
-    cur.execute("SELECT COUNT(*) FROM businesses")
+    execute("SELECT COUNT(*) FROM businesses")
     businesses = cur.fetchone()[0]
 
-    cur.execute("SELECT COUNT(*) FROM admins")
+    execute("SELECT COUNT(*) FROM admins")
     admins = cur.fetchone()[0]
 
     await message.answer(
@@ -2043,9 +2043,9 @@ async def addbs(message: Message):
     today = datetime.now().strftime("%Y-%m-%d")
     end_time = f"{today} {end}:00"
 
-    cur.execute("DELETE FROM family_battle")
+    execute("DELETE FROM family_battle")
 
-    cur.execute(
+    execute(
         """
         INSERT INTO family_battle(location, end_time)
         VALUES(%s, %s)
@@ -2062,7 +2062,7 @@ from datetime import datetime
 @dp.message(Command("bs"))
 async def bs(message: Message):
 
-    cur.execute(
+        execute(
         "SELECT location, end_time FROM family_battle LIMIT 1"
     )
 
@@ -2077,7 +2077,7 @@ async def bs(message: Message):
     end = datetime.fromisoformat(end_time)
 
     if datetime.now() >= end:
-        cur.execute("DELETE FROM family_battle")
+        execute("DELETE FROM family_battle")
         db.commit()
 
         await message.answer("Активных битв семей нет.")
@@ -2100,7 +2100,7 @@ async def delbs(message: Message):
         await message.answer("Недостаточно прав.")
         return
 
-    cur.execute("DELETE FROM family_battle")
+    execute("DELETE FROM family_battle")
     db.commit()
 
     await message.answer("✅ Активная битва семей удалена.")
@@ -2129,7 +2129,7 @@ async def profile(message: Message):
             await message.answer("Укажите корректный ID.")
             return
 
-    cur.execute(
+        execute(
         """
         SELECT first_name, username, reg_date
         FROM users
@@ -2185,7 +2185,7 @@ async def zbt(message: Message):
 
     await register_user(message)
     
-    cur.execute("""
+        execute("""
         SELECT chat_id, message_id
         FROM zbt_posts
         ORDER BY id
@@ -2217,7 +2217,7 @@ async def delzbt(message: Message):
         await message.answer("Пример:\n/delzbt 1")
         return
 
-    cur.execute(
+        execute(
         "DELETE FROM zbt_posts WHERE id=%s",
         (args[1],)
     )
@@ -2307,7 +2307,7 @@ async def save_zbt(message: Message):
 
     waiting_zbt.remove(message.from_user.id)
 
-    cur.execute(
+        execute(
         """
         INSERT INTO zbt_posts(chat_id, message_id)
         VALUES(%s, %s)
@@ -2328,7 +2328,7 @@ async def save_chat(message: Message):
 
     if message.chat.type in ["group", "supergroup"]:
 
-        cur.execute(
+            execute(
             "INSERT OR IGNORE INTO chats(chat_id) VALUES(%s)",
             (message.chat.id,)
         )
