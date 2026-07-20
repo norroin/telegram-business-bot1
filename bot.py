@@ -1992,7 +1992,7 @@ async def stats(message: Message):
         f"🏢 Бизнесов: {businesses}\n"
         f"🛡 Администраторов: {admins}"
     )
-    
+
 @dp.message(Command("addbs"))
 async def addbs(message: Message):
 
@@ -2088,14 +2088,11 @@ async def profile(message: Message):
 
     args = message.text.split()
 
-    # По умолчанию — свой профиль
     target_id = message.from_user.id
 
-    # Если ответ на сообщение
     if message.reply_to_message:
         target_id = message.reply_to_message.from_user.id
 
-    # Если указан ID
     elif len(args) == 2:
         if args[1].isdigit():
             target_id = int(args[1])
@@ -2104,12 +2101,12 @@ async def profile(message: Message):
             return
 
     user = execute(
-    """
-    SELECT first_name, username, reg_date
-    FROM users
-    WHERE user_id=%s
-    """,
-    (target_id,)
+        """
+        SELECT first_name, username, reg_date
+        FROM users
+        WHERE user_id=%s
+        """,
+        (target_id,)
     ).fetchone()
 
     if not user:
@@ -2126,7 +2123,7 @@ async def profile(message: Message):
     if is_creator(target_id):
         role = "Создатель"
 
-        await message.answer(
+    await message.answer(
         f"""
 👤 <b>Профиль пользователя</b>
 
@@ -2143,7 +2140,6 @@ async def profile(message: Message):
 
 📅 Регистрация:
 {reg_date}
-
 """,
         parse_mode="HTML"
     )
