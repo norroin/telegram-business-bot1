@@ -67,13 +67,11 @@ async def require_sub(message: Message):
     )
 
 
-async def register_user(message: Message): 
-    execute(
+async def register_user(message: Message):
+    user = execute(
         "SELECT user_id FROM users WHERE user_id=%s",
         (message.from_user.id,)
-    )
-
-    user = cur.fetchone()
+    ).fetchone()
 
     if not user:
         execute(
@@ -2066,7 +2064,7 @@ async def bs(message: Message):
         f"📍 Местоположение: /gps {location}\n"
         f"⏰ До окончания: {end.strftime('%H:%M')}"
     )
-    
+
 @dp.message(Command("delbs"))
 async def delbs(message: Message):
 
@@ -2107,16 +2105,14 @@ async def profile(message: Message):
             await message.answer("Укажите корректный ID.")
             return
 
-    execute(
-        """
-        SELECT first_name, username, reg_date
-        FROM users
-        WHERE user_id=%s
-        """,
-        (target_id,)
-    )
-
-    user = cur.fetchone()
+    user = execute(
+    """
+    SELECT first_name, username, reg_date
+    FROM users
+    WHERE user_id=%s
+    """,
+    (target_id,)
+    ).fetchone()
 
     if not user:
         await message.answer("Пользователь не найден.")
