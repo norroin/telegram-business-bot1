@@ -2051,7 +2051,7 @@ async def bs(message: Message):
     end = datetime.fromisoformat(end_time)
 
     if datetime.now() >= end:
-       execute("DELETE FROM family_battle")
+        execute("DELETE FROM family_battle")
     db.commit()
 
         await message.answer("Активных битв семей нет.")
