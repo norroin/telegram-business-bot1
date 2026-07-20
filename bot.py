@@ -442,7 +442,7 @@ async def add_location(message: Message, state: FSMContext):
     
     data = await state.get_data()
 
-        execute(
+    execute(
         """
         INSERT INTO businesses
         (id, name, owner, category, location)
