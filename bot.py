@@ -2050,9 +2050,9 @@ async def bs(message: Message):
     location, end_time = row
 
     if isinstance(end_time, str):
-    end = datetime.fromisoformat(end_time)
-else:
-    end = end_time
+        end = datetime.fromisoformat(end_time)
+    else:
+        end = end_time
 
     if datetime.now() >= end:
         execute("DELETE FROM family_battle")
@@ -2066,7 +2066,7 @@ else:
         f"📍 Местоположение: /gps {location}\n"
         f"⏰ До окончания: {end.strftime('%H:%M')}"
     )
-
+    
 @dp.message(Command("delbs"))
 async def delbs(message: Message):
 
