@@ -1616,12 +1616,12 @@ async def deladm(message: Message):
 
     nickname = admin[0]
 
-        execute(
+    execute(
         "DELETE FROM admins WHERE id=%s",
         (admin_id,)
     )
 
-        db.commit()
+    db.commit()
 
     add_log(
         message.from_user.id,
@@ -1659,7 +1659,7 @@ async def dadm(message: Message):
 
     new_position = args[2]
 
-        execute(
+    execute(
         "SELECT nickname FROM admins WHERE id=%s",
         (admin_id,)
     )
@@ -1672,7 +1672,7 @@ async def dadm(message: Message):
 
     nickname = admin[0]
 
-        execute(
+    execute(
         """
         UPDATE admins
         SET position=%s
@@ -1684,7 +1684,7 @@ async def dadm(message: Message):
         )
     )
 
-        db.commit()
+    db.commit()
 
     add_log(
         message.from_user.id,
@@ -1723,7 +1723,7 @@ async def repadm(message: Message):
         )
         return
 
-        execute(
+    execute(
         "SELECT nickname FROM admins WHERE id=%s",
         (admin_id,)
     )
@@ -1736,7 +1736,7 @@ async def repadm(message: Message):
 
     nickname = admin[0]
 
-        execute(
+    execute(
         """
         UPDATE admins
         SET reputation=%s
@@ -1748,7 +1748,7 @@ async def repadm(message: Message):
         )
     )
 
-        db.commit()
+    db.commit()
 
     add_log(
         message.from_user.id,
@@ -1790,7 +1790,7 @@ async def rep(message: Message):
         await message.answer("Используйте только + или -")
         return
 
-        execute(
+    execute(
         "SELECT nickname FROM admins WHERE id=%s",
         (admin_id,)
     )
@@ -1801,7 +1801,7 @@ async def rep(message: Message):
         await message.answer("Администратор не найден.")
         return
 
-        execute(
+    execute(
         """
         SELECT vote
         FROM admin_votes
@@ -1819,7 +1819,7 @@ async def rep(message: Message):
         )
         return
 
-        execute(
+    execute(
         """
         INSERT INTO admin_votes
         (user_id, admin_id, vote)
@@ -1832,7 +1832,7 @@ async def rep(message: Message):
         )
     )
 
-        execute(
+    execute(
         """
         UPDATE admins
         SET reputation = reputation + %s
@@ -1844,7 +1844,7 @@ async def rep(message: Message):
         )
     )
 
-        b.commit()
+    db.commit()
 
     await message.answer(
         "Спасибо за вашу оценку!"
@@ -1857,7 +1857,7 @@ async def topadmin(message: Message):
         await require_sub(message)
         return
 
-        execute("""
+    execute("""
         SELECT nickname, position, reputation
         FROM admins
         ORDER BY reputation DESC, nickname
@@ -2017,7 +2017,7 @@ async def addbs(message: Message):
     today = datetime.now().strftime("%Y-%m-%d")
     end_time = f"{today} {end}:00"
 
-        execute("DELETE FROM family_battle")
+    execute("DELETE FROM family_battle")
 
         execute(
         """
