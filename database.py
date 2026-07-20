@@ -22,12 +22,12 @@ def reconnect():
 
     try:
         cur.close()
-    except:
+    except Exception:
         pass
 
     try:
         db.close()
-    except:
+    except Exception:
         pass
 
     db = connect()
@@ -38,7 +38,10 @@ def execute(query, params=None):
     global db, cur
 
     try:
-        return cur.execute(query, params or ())
-    except psycopg.OperationalError:
+        cur.execute(query, params or ())
+        return cur
+
+    except (psycopg.OperationalError, psycopg.InterfaceError):
         reconnect()
-        return cur.execute(query, params or ())
+        cur.execute(query, params or ())
+        return cur
