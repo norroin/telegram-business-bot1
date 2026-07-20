@@ -68,7 +68,7 @@ async def require_sub(message: Message):
 
 
 async def register_user(message: Message):
-        execute(
+    execute(
         "SELECT user_id FROM users WHERE user_id=%s",
         (message.from_user.id,)
     )
