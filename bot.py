@@ -2140,6 +2140,7 @@ async def profile(message: Message):
 
 📅 Регистрация:
 {reg_date}
+
 """,
         parse_mode="HTML"
     )
