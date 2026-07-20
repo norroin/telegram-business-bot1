@@ -1944,7 +1944,7 @@ async def broadcast(message: Message):
     users_sent = 0
     chats_sent = 0
 
-        execute("SELECT user_id FROM users")
+    execute("SELECT user_id FROM users")
 
     for (user_id,) in cur.fetchall():
         try:
@@ -1953,7 +1953,7 @@ async def broadcast(message: Message):
         except:
             pass
 
-        execute("SELECT chat_id FROM chats")
+    execute("SELECT chat_id FROM chats")
 
     for (chat_id,) in cur.fetchall():
         try:
@@ -2019,7 +2019,7 @@ async def addbs(message: Message):
 
     execute("DELETE FROM family_battle")
 
-        execute(
+    execute(
         """
         INSERT INTO family_battle(location, end_time)
         VALUES(%s, %s)
@@ -2074,8 +2074,8 @@ async def delbs(message: Message):
         await message.answer("Недостаточно прав.")
         return
 
-        execute("DELETE FROM family_battle")
-        db.commit()
+    execute("DELETE FROM family_battle")
+    db.commit()
 
     await message.answer("✅ Активная битва семей удалена.")
 
@@ -2103,7 +2103,7 @@ async def profile(message: Message):
             await message.answer("Укажите корректный ID.")
             return
 
-        execute(
+    execute(
         """
         SELECT first_name, username, reg_date
         FROM users
@@ -2159,7 +2159,7 @@ async def zbt(message: Message):
 
     await register_user(message)
     
-        execute("""
+    execute("""
         SELECT chat_id, message_id
         FROM zbt_posts
         ORDER BY id
@@ -2191,12 +2191,12 @@ async def delzbt(message: Message):
         await message.answer("Пример:\n/delzbt 1")
         return
 
-        execute(
+    execute(
         "DELETE FROM zbt_posts WHERE id=%s",
         (args[1],)
     )
 
-        db.commit()
+    db.commit()
 
     await message.answer("✅ Пост удалён.")
 
@@ -2281,7 +2281,7 @@ async def save_zbt(message: Message):
 
     waiting_zbt.remove(message.from_user.id)
 
-        execute(
+    execute(
         """
         INSERT INTO zbt_posts(chat_id, message_id)
         VALUES(%s, %s)
@@ -2292,7 +2292,7 @@ async def save_zbt(message: Message):
         )
     )
 
-        db.commit()
+    db.commit()
 
     await message.answer("✅ Пост успешно сохранён.")
 
