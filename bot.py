@@ -457,7 +457,7 @@ async def add_location(message: Message, state: FSMContext):
         )
     )
 
-        db.commit()
+    db.commit()
 
     await state.clear()
     await message.answer("Бизнес добавлен.")
@@ -492,11 +492,11 @@ async def owner_save(message: Message, state: FSMContext):
     
     data = await state.get_data()
 
-        execute(
+    execute(
         "UPDATE businesses SET owner=%s WHERE id=%s",
         (message.text, data["id"])
     )
-        db.commit()
+    db.commit()
 
     await state.clear()
     await message.answer("Владелец изменён.")
@@ -531,11 +531,11 @@ async def location_save(message: Message, state: FSMContext):
     
     data = await state.get_data()
 
-        execute(
+    execute(
         "UPDATE businesses SET location=%s WHERE id=%s",
         (message.text, data["id"])
     )
-        db.commit()
+    db.commit()
 
     await state.clear()
     await message.answer("Адрес обновлён.")
@@ -572,11 +572,11 @@ async def photo_save(message: Message, state: FSMContext):
 
     photo_id = message.photo[-1].file_id
 
-        execute(
+    execute(
         "UPDATE businesses SET photo_id=%s WHERE id=%s",
         (photo_id, data["id"])
     )
-        db.commit()
+    db.commit()
 
     await state.clear()
     await message.answer("Фото сохранено.")
