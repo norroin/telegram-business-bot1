@@ -167,36 +167,6 @@ async def start(message: Message):
         return
 
     await register_user(message)
-    
-        execute(
-        "SELECT user_id FROM users WHERE user_id=%s",
-        (message.from_user.id,)
-    )
-
-    user = cur.fetchone()
-
-    if not user:
-        execute(
-            "INSERT INTO users(user_id, username, first_name, reg_date) VALUES(%s,%s,%s,%s)",
-            (
-                message.from_user.id,
-                message.from_user.username,
-                message.from_user.full_name,
-                datetime.now().strftime("%d.%m.%Y")
-            )
-        )
-        db.commit()
-
-        await bot.send_message(
-            OWNER_ID,
-            f"""
-🆕 Новый пользователь
-
-👤 {message.from_user.full_name}
-🆔 {message.from_user.id}
-🔗 @{message.from_user.username if message.from_user.username else 'нет'}
-"""
-        )
 
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
@@ -210,6 +180,7 @@ async def start(message: Message):
         "Добро пожаловать!",
         reply_markup=kb
     )
+    
 @dp.message(Command("business"))
 async def business(message: Message):
     
