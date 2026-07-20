@@ -1978,7 +1978,7 @@ async def stats(message: Message):
         users = cur.fetchone()[0]
 
         execute("SELECT COUNT(*) FROM chats")
-         chats = cur.fetchone()[0]
+        chats = cur.fetchone()[0]
 
         execute("SELECT COUNT(*) FROM businesses")
         businesses = cur.fetchone()[0]
