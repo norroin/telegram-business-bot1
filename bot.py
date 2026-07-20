@@ -2049,7 +2049,10 @@ async def bs(message: Message):
 
     location, end_time = row
 
+    if isinstance(end_time, str):
     end = datetime.fromisoformat(end_time)
+else:
+    end = end_time
 
     if datetime.now() >= end:
         execute("DELETE FROM family_battle")
