@@ -937,7 +937,7 @@ async def categories(message: Message):
 
     await register_user(message)
     
-        execute(
+    execute(
         """
         SELECT DISTINCT category
         FROM businesses
@@ -1083,7 +1083,7 @@ async def menu_bizlist(message: Message):
         await require_sub(message)
         return
     
-        execute(
+    execute(
         "SELECT id, name FROM businesses ORDER BY id"
     )
 
@@ -1203,7 +1203,7 @@ async def addbiz(message: Message):
         )
         return
 
-        execute(
+    execute(
         "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
     )
@@ -1214,7 +1214,7 @@ async def addbiz(message: Message):
         )
         return
 
-        execute(
+    execute(
         """
         INSERT INTO businesses
         (id, name, owner, location, category)
@@ -1229,7 +1229,7 @@ async def addbiz(message: Message):
         )
     )
 
-        db.commit()
+    db.commit()
 
     await message.answer(
         f"✅ Бизнес создан.\n\n"
@@ -1248,7 +1248,7 @@ async def logs(message: Message):
         await message.answer("Недостаточно прав.")
         return
 
-        execute(
+    execute(
         """
         SELECT user_id, action, created_at
         FROM logs
@@ -1281,7 +1281,7 @@ async def checkrole(message: Message):
         await require_sub(message)
         return
     
-        execute(
+    execute(
         "SELECT * FROM roles"
     )
 
@@ -1300,7 +1300,7 @@ async def biz(callback: CallbackQuery):
 
     await bizlist(callback.message)
 
-        execute(
+    execute(
         "SELECT id, name FROM businesses ORDER BY id"
     )
 
@@ -1436,7 +1436,7 @@ async def addadm(message: Message):
     vk = parts[2]
     position = parts[3]
 
-        execute(
+    execute(
         "SELECT id FROM admins WHERE id=%s",
         (admin_id,)
     )
@@ -1445,7 +1445,7 @@ async def addadm(message: Message):
         await message.answer("Администратор с таким ID уже существует.")
         return
 
-        execute(
+    execute(
         """
         INSERT INTO admins
         (id, nickname, vk, position, reputation)
@@ -1459,7 +1459,7 @@ async def addadm(message: Message):
         )
     )
 
-        db.commit()
+    db.commit()
 
     add_log(
         message.from_user.id,
@@ -1477,7 +1477,7 @@ async def admins(message: Message):
 
     await register_user(message)
 
-        execute(
+    execute(
          """
         SELECT id, nickname, position
         FROM admins
@@ -1528,7 +1528,7 @@ async def iadmin(message: Message):
         await message.answer("ID должен быть числом.")
         return
 
-        execute("""
+    execute("""
         SELECT id, nickname, vk, position, reputation
         FROM admins
         WHERE id=%s
@@ -1542,7 +1542,7 @@ async def iadmin(message: Message):
 
     admin_id, nickname, vk, position, reputation = admin
 
-        execute("""
+    execute("""
         SELECT id
         FROM admins
         ORDER BY reputation DESC, nickname
@@ -1603,7 +1603,7 @@ async def deladm(message: Message):
         await message.answer("ID должен быть числом.")
         return
 
-        execute(
+    execute(
         "SELECT nickname FROM admins WHERE id=%s",
         (admin_id,)
     )
