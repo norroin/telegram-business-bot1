@@ -2027,7 +2027,7 @@ async def addbs(message: Message):
         (location, end_time)
     )
 
-        db.commit()
+    db.commit()
 
     await message.answer("✅ Активная БС добавлена.")
 
@@ -2036,7 +2036,7 @@ from datetime import datetime
 @dp.message(Command("bs"))
 async def bs(message: Message):
 
-        execute(
+    execute(
         "SELECT location, end_time FROM family_battle LIMIT 1"
     )
 
