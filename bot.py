@@ -649,11 +649,11 @@ async def cbiz(message: Message):
     business_id = args[1]
     category = args[2]
 
-        execute(
+    execute(
         "UPDATE businesses SET category=%s WHERE id=%s",
         (category, business_id)
     )
-        db.commit()
+    db.commit()
 
     await message.answer("Категория сохранена.")
 
