@@ -709,7 +709,7 @@ async def nbiz(message: Message):
     business_id = args[1]
     new_name = args[2]
 
-        execute(
+    execute(
         "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
     )
@@ -723,7 +723,7 @@ async def nbiz(message: Message):
         (new_name, business_id)
     )
 
-        db.commit()
+    db.commit()
 
     await message.answer(
         "Название бизнеса изменено."
@@ -760,12 +760,12 @@ async def lbiz(message: Message):
         await message.answer("Бизнес не найден.")
         return
 
-        execute(
+    execute(
         "UPDATE businesses SET location=%s WHERE id=%s",
         (new_location, business_id)
     )
 
-        db.commit()
+    db.commit()
 
     await message.answer(
         "Адрес бизнеса изменён."
