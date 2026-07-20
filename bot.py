@@ -1973,17 +1973,17 @@ async def stats(message: Message):
     if not is_creator(message.from_user.id):
         return
 
-        execute("SELECT COUNT(*) FROM users")
-        users = cur.fetchone()[0]
+    execute("SELECT COUNT(*) FROM users")
+    users = cur.fetchone()[0]
 
-        execute("SELECT COUNT(*) FROM chats")
-        chats = cur.fetchone()[0]
+    execute("SELECT COUNT(*) FROM chats")
+    chats = cur.fetchone()[0]
 
-        execute("SELECT COUNT(*) FROM businesses")
-        businesses = cur.fetchone()[0]
+    execute("SELECT COUNT(*) FROM businesses")
+    businesses = cur.fetchone()[0]
 
-        execute("SELECT COUNT(*) FROM admins")
-        admins = cur.fetchone()[0]
+    execute("SELECT COUNT(*) FROM admins")
+    admins = cur.fetchone()[0]
 
     await message.answer(
         f"📊 Статистика бота\n\n"
@@ -1992,9 +1992,7 @@ async def stats(message: Message):
         f"🏢 Бизнесов: {businesses}\n"
         f"🛡 Администраторов: {admins}"
     )
-
-from datetime import datetime
-
+    
 @dp.message(Command("addbs"))
 async def addbs(message: Message):
 
