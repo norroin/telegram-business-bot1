@@ -45,10 +45,12 @@ async def check_sub(message: Message):
     except:
         return False
 
+
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
+
 async def require_sub(message: Message):
-    kb = InlineKeyboardMarkup
+    kb = InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
@@ -57,7 +59,15 @@ async def require_sub(message: Message):
                 )
             ]
         ]
-    async def register_user(message: Message):
+    )
+
+    await message.answer(
+        "❌ Для использования бота необходимо подписаться на канал.",
+        reply_markup=kb
+    )
+
+
+async def register_user(message: Message):
     execute(
         "SELECT user_id FROM users WHERE user_id=%s",
         (message.from_user.id,)
