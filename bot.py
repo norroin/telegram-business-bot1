@@ -751,7 +751,7 @@ async def lbiz(message: Message):
     business_id = args[1]
     new_location = args[2]
 
-        execute(
+    execute(
         "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
     )
@@ -792,7 +792,7 @@ async def delbiz(message: Message):
 
     business_id = args[1]
 
-        execute(
+    execute(
         "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
     )
@@ -801,12 +801,12 @@ async def delbiz(message: Message):
         await message.answer("Бизнес не найден.")
         return
 
-        execute(
+    execute(
         "DELETE FROM businesses WHERE id=%s",
         (business_id,)
     )
 
-        db.commit()
+    db.commit()
 
     add_log(
         message.from_user.id,
@@ -839,7 +839,7 @@ async def vbiz(message: Message):
     business_id = args[1]
     new_owner = args[2]
 
-        execute(
+    execute(
         "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
     )
@@ -848,12 +848,12 @@ async def vbiz(message: Message):
         await message.answer("Бизнес не найден.")
         return
 
-        execute(
+    execute(
         "UPDATE businesses SET owner=%s WHERE id=%s",
         (new_owner, business_id)
     )
 
-        db.commit()
+    db.commit()
 
     add_log(
     message.from_user.id,
@@ -885,7 +885,7 @@ async def fbiz(message: Message, state: FSMContext):
 
     business_id = args[1]
 
-        execute(
+    execute(
         "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
     )
@@ -915,12 +915,12 @@ async def fbiz_save(message: Message, state: FSMContext):
 
     photo_id = message.photo[-1].file_id
 
-        execute(
+    execute(
         "UPDATE businesses SET photo_id=%s WHERE id=%s",
         (photo_id, data["id"])
     )
 
-        db.commit()
+    db.commit()
 
     await state.clear()
 
