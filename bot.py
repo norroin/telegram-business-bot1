@@ -48,7 +48,7 @@ async def check_sub(message: Message):
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 async def require_sub(message: Message):
-    kb = InlineKeyboardMarkup(
+    kb = InlineKeyboardMarkup
         inline_keyboard=[
             [
                 InlineKeyboardButton(
