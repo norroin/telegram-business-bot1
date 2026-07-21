@@ -76,8 +76,14 @@ CREATE TABLE IF NOT EXISTS admins(
     nickname TEXT,
     vk TEXT,
     position TEXT,
+    department TEXT,
     reputation INTEGER DEFAULT 0
 )
+""",
+
+"""
+ALTER TABLE admins
+ADD COLUMN IF NOT EXISTS department TEXT
 """,
 
 ]
