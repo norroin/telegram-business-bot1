@@ -1076,7 +1076,7 @@ async def menu_bizlist(message: Message):
     
     rows = execute(
         "SELECT id, name FROM businesses ORDER BY id"
-    )fetchall()
+    ).fetchall()
 
     if not rows:
         await message.answer("Список бизнесов пуст.")
