@@ -711,7 +711,7 @@ async def nbiz(message: Message):
 
     db.commit()
 
-await message.answer("Название бизнеса изменено.")
+        await message.answer("Название бизнеса изменено.")
 
 @dp.message(Command("lbiz"))
 async def lbiz(message: Message):
