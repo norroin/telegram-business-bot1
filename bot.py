@@ -201,16 +201,14 @@ async def business(message: Message):
 
     # Поиск по ID
     if search.isdigit():
-        execute(
+        row = execute(
             """
             SELECT name, owner, location, photo_id, category
             FROM businesses
             WHERE id=%s
             """,
             (search,)
-        )
-
-        row = cur.fetchone()
+        ).fetchone()
 
         if not row:
             await message.answer("Бизнес не найден.")
@@ -383,14 +381,12 @@ async def add_id(message: Message, state: FSMContext):
         )
         return
 
-        execute(
+    if execute(
         "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
-    )
-
-    if cur.fetchone():
+    ).fetchone():
         await message.answer(
-            "Бизнес с таким ID уже существует."
+        "Бизнес с таким ID уже существует."
         )
         return
 
@@ -701,25 +697,21 @@ async def nbiz(message: Message):
     business_id = args[1]
     new_name = args[2]
 
-    execute(
+    if not execute(
         "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
-    )
-
-    if not cur.fetchone():
+    ).fetchone():
         await message.answer("Бизнес не найден.")
         return
 
-        execute(
+    execute(
         "UPDATE businesses SET name=%s WHERE id=%s",
         (new_name, business_id)
     )
 
     db.commit()
 
-    await message.answer(
-        "Название бизнеса изменено."
-    )
+await message.answer("Название бизнеса изменено.")
 
 @dp.message(Command("lbiz"))
 async def lbiz(message: Message):
@@ -743,19 +735,17 @@ async def lbiz(message: Message):
     business_id = args[1]
     new_location = args[2]
 
-    execute(
+    if not execute(
         "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
-    )
-
-    if not cur.fetchone():
+    ).fetchone():
         await message.answer("Бизнес не найден.")
         return
 
     execute(
         "UPDATE businesses SET location=%s WHERE id=%s",
         (new_location, business_id)
-    )
+    ) 
 
     db.commit()
 
@@ -784,12 +774,10 @@ async def delbiz(message: Message):
 
     business_id = args[1]
 
-    execute(
+    if not execute(
         "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
-    )
-
-    if not cur.fetchone():
+    ).fetchone():
         await message.answer("Бизнес не найден.")
         return
 
@@ -831,12 +819,10 @@ async def vbiz(message: Message):
     business_id = args[1]
     new_owner = args[2]
 
-    execute(
+    if not execute(
         "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
-    )
-
-    if not cur.fetchone():
+    ).fetchone():
         await message.answer("Бизнес не найден.")
         return
 
@@ -877,14 +863,12 @@ async def fbiz(message: Message, state: FSMContext):
 
     business_id = args[1]
 
-    execute(
+    if not execute(
         "SELECT id FROM businesses WHERE id=%s",
         (business_id,)
-    )
-
-    if not cur.fetchone():
+    ).fetchone():
         await message.answer(
-            "Бизнес не найден."
+        "Бизнес не найден."
         )
         return
 
@@ -1195,7 +1179,10 @@ async def addbiz(message: Message):
         (business_id,)
     )
 
-    if cur.fetchone():
+    if execute(
+       "SELECT id FROM businesses WHERE id=%s",
+       (business_id,)
+    ).fetchone():
         await message.answer(
             "Бизнес с таким ID уже существует."
         )
@@ -1417,13 +1404,13 @@ async def addadm(message: Message):
     vk = parts[2]
     position = parts[3]
 
-    execute(
+    if execute(
         "SELECT id FROM admins WHERE id=%s",
         (admin_id,)
-    )
-
-    if cur.fetchone():
-        await message.answer("Администратор с таким ID уже существует.")
+    ).fetchone():
+        await message.answer(
+            "Администратор с таким ID уже существует."
+        )
         return
 
     execute(
@@ -1507,13 +1494,11 @@ async def iadmin(message: Message):
         await message.answer("ID должен быть числом.")
         return
 
-    execute("""
+    admin = execute("""
         SELECT id, nickname, vk, position, reputation
         FROM admins
         WHERE id=%s
-    """, (admin_id,))
-
-    admin = cur.fetchone()
+    """, (admin_id,)).fetchone()
 
     if not admin:
         await message.answer("Администратор не найден.")
@@ -1580,12 +1565,10 @@ async def deladm(message: Message):
         await message.answer("ID должен быть числом.")
         return
 
-    execute(
+    admin = execute(
         "SELECT nickname FROM admins WHERE id=%s",
         (admin_id,)
-    )
-
-    admin = cur.fetchone()
+    ).fetchone()
 
     if not admin:
         await message.answer("Администратор не найден.")
@@ -1636,12 +1619,10 @@ async def dadm(message: Message):
 
     new_position = args[2]
 
-    execute(
+    admin = execute(
         "SELECT nickname FROM admins WHERE id=%s",
         (admin_id,)
-    )
-
-    admin = cur.fetchone()
+    ).fetchone()
 
     if not admin:
         await message.answer("Администратор не найден.")
@@ -1700,12 +1681,10 @@ async def repadm(message: Message):
         )
         return
 
-    execute(
+    admin = execute(
         "SELECT nickname FROM admins WHERE id=%s",
         (admin_id,)
-    )
-
-    admin = cur.fetchone()
+    ).fetchone()
 
     if not admin:
         await message.answer("Администратор не найден.")
@@ -1767,18 +1746,16 @@ async def rep(message: Message):
         await message.answer("Используйте только + или -")
         return
 
-    execute(
+    admin = execute(
         "SELECT nickname FROM admins WHERE id=%s",
         (admin_id,)
-    )
-
-    admin = cur.fetchone()
+    ).fetchone()
 
     if not admin:
         await message.answer("Администратор не найден.")
         return
 
-    execute(
+    if execute(
         """
         SELECT vote
         FROM admin_votes
@@ -1788,9 +1765,7 @@ async def rep(message: Message):
             message.from_user.id,
             admin_id
         )
-    )
-
-    if cur.fetchone():
+    ).fetchone():
         await message.answer(
             "Вы уже оценивали этого администратора."
         )
@@ -1947,17 +1922,21 @@ async def stats(message: Message):
     if not is_creator(message.from_user.id):
         return
 
-    execute("SELECT COUNT(*) FROM users")
-    users = cur.fetchone()[0]
+    users = execute(
+        "SELECT COUNT(*) FROM users"
+    ).fetchone()[0]
 
-    execute("SELECT COUNT(*) FROM chats")
-    chats = cur.fetchone()[0]
+    chats = execute(
+        "SELECT COUNT(*) FROM chats"
+    ).fetchone()[0]
 
-    execute("SELECT COUNT(*) FROM businesses")
-    businesses = cur.fetchone()[0]
+    businesses = execute(
+        "SELECT COUNT(*) FROM businesses"
+    ).fetchone()[0]
 
-    execute("SELECT COUNT(*) FROM admins")
-    admins = cur.fetchone()[0]
+    admins = execute(
+        "SELECT COUNT(*) FROM admins"
+    ).fetchone()[0]
 
     await message.answer(
         f"📊 Статистика бота\n\n"
@@ -2007,11 +1986,9 @@ from datetime import datetime
 @dp.message(Command("bs"))
 async def bs(message: Message):
 
-    execute(
+    row = execute(
         "SELECT location, end_time FROM family_battle LIMIT 1"
-    )
-
-    row = cur.fetchone()
+    ).fetchone()
 
     if not row:
         await message.answer("Активных битв семей нет.")
