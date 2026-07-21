@@ -302,7 +302,7 @@ async def bizlist(message: Message):
         text += f"{business_id} - {name}\n"
 
     await message.answer(text)
-    
+
 @dp.message(Command("admintab"))
 async def admintab(message: Message):
 
@@ -977,7 +977,7 @@ async def support(message: Message):
         "/categories - список категорий\n"
         "/support - справка\n"
         "/admin - список администрации\n"
-        "/iadmin - профиль админи\n"
+        "/iadmin - профиль админа\n"
         "/rep - проголосовать за админа\n"
         "/topadmin - Топ репутации администрации\n"
         "/bug - отправить предложение по улучшению\n"
@@ -1002,6 +1002,7 @@ async def support(message: Message):
             "/nbiz ID - Новое название\n"
             "/repadm - изменить репутацию\n"
             "/lbiz ID - Новый адрес\n"
+            "/logs - логи\n"
             "/addadm ID - Добавить админа в список\n"
             "/delbiz ID - удалить бизнес\n"
             "/userrole ID - статус роли\n"
