@@ -281,21 +281,18 @@ async def business(message: Message):
 
 @dp.message(Command("bizlist"))
 async def bizlist(message: Message):
-    
+
     if not await check_sub(message):
         await require_sub(message)
         return
 
     await register_user(message)
-    
-    execute(
-        "SELECT id, name FROM businesses ORDER BY id"
-    )
 
-    rows = cur.fetchall()
+    rows = execute(
+        "SELECT id, name FROM businesses ORDER BY id"
+    ).fetchall()
 
     if not rows:
-        
         await message.answer("Список бизнесов пуст.")
         return
 
@@ -305,7 +302,7 @@ async def bizlist(message: Message):
         text += f"{business_id} - {name}\n"
 
     await message.answer(text)
-
+    
 @dp.message(Command("admintab"))
 async def admintab(message: Message):
 
