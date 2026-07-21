@@ -1387,10 +1387,10 @@ async def addadm(message: Message):
 
     parts = [x.strip() for x in text.split("|")]
 
-    if len(parts) != 4:
+    if len(parts) != 5:
         await message.answer(
             "Пример:\n"
-            "/addadm 1 | Willy | https://vk.com/willy | Главный администратор"
+            "/addadm 1 | Willy | https://vk.com/willy | Главный администратор | Руководители"
         )
         return
 
@@ -1403,6 +1403,7 @@ async def addadm(message: Message):
     nickname = parts[1]
     vk = parts[2]
     position = parts[3]
+    department = parts[4]
 
     if execute(
         "SELECT id FROM admins WHERE id=%s",
@@ -1416,14 +1417,15 @@ async def addadm(message: Message):
     execute(
         """
         INSERT INTO admins
-        (id, nickname, vk, position, reputation)
-        VALUES (%s, %s, %s, %s, 0)
+        (id, nickname, vk, position, department, reputation)
+        VALUES (%s, %s, %s, %s, %s, 0)
         """,
         (
             admin_id,
             nickname,
             vk,
-            position
+            position,
+            department
         )
     )
 
@@ -1445,13 +1447,11 @@ async def admins(message: Message):
 
     await register_user(message)
 
-    rows = execute(
-        """
-        SELECT id, nickname, position
+    rows = execute("""
+        SELECT id, nickname, position, department
         FROM admins
-        ORDER BY id
-        """
-    ).fetchall()
+        ORDER BY department, nickname
+    """).fetchall()
 
     if not rows:
         await message.answer(
@@ -1459,14 +1459,27 @@ async def admins(message: Message):
         )
         return
 
-    text = "👮 Администрация Брянска\n\n"
+    text = "👮 Администрация Брянска\n"
 
-    for admin_id, nickname, position in rows:
+    current_department = None
+    number = 1
+
+    for admin_id, nickname, position, department in rows:
+
+        department = department or "Без отдела"
+
+        if department != current_department:
+            current_department = department
+            number = 1
+            text += f"\n📂 {department}\n\n"
+
         text += (
-            f"🆔 {admin_id} - "
-            f"{nickname} - "
-            f"{position}\n"
+            f"{number}. {nickname}\n"
+            f"🆔 {admin_id}\n"
+            f"💼 {position}\n\n"
         )
+
+        number += 1
 
     await message.answer(text)
 
