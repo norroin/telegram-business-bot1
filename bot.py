@@ -233,7 +233,7 @@ async def business(message: Message):
         return
 
     # Поиск по названию
-        execute(
+    name_rows = execute(
         """
         SELECT id, name
         FROM businesses
@@ -241,9 +241,7 @@ async def business(message: Message):
         ORDER BY name
         """,
         (f"%{search}%",)
-    )
-
-    name_rows = cur.fetchall()
+    ).fetchall()
 
     if name_rows:
         text = "🔎 Найдено по названию:\n\n"
@@ -255,7 +253,7 @@ async def business(message: Message):
         return
 
     # Поиск по категории
-        execute(
+    category_rows = execute(
         """
         SELECT id, name
         FROM businesses
@@ -263,9 +261,7 @@ async def business(message: Message):
         ORDER BY name
         """,
         (search,)
-    )
-
-    rows = cur.fetchall()
+    ).fetchall()
 
     if rows:
         text = f"📂 Категория: {search}\n\n"
@@ -933,7 +929,7 @@ async def categories(message: Message):
 
     await register_user(message)
     
-    execute(
+    rows = execute(
         """
         SELECT DISTINCT category
         FROM businesses
@@ -941,9 +937,7 @@ async def categories(message: Message):
         AND category != ''
         ORDER BY category
         """
-    )
-
-    rows = cur.fetchall()
+    ).fetchall()
 
     if not rows:
         await message.answer("Категории отсутствуют.")
@@ -1080,11 +1074,9 @@ async def menu_bizlist(message: Message):
         await require_sub(message)
         return
     
-    execute(
+    rows = execute(
         "SELECT id, name FROM businesses ORDER BY id"
-    )
-
-    rows = cur.fetchall()
+    )fetchall()
 
     if not rows:
         await message.answer("Список бизнесов пуст.")
@@ -1104,7 +1096,7 @@ async def menu_categories(message: Message):
         await require_sub(message)
         return    
 
-    execute(
+    rows = execute(
         """
         SELECT DISTINCT category
         FROM businesses
@@ -1112,9 +1104,7 @@ async def menu_categories(message: Message):
         AND category != ''
         ORDER BY category
         """
-    )
-
-    rows = cur.fetchall()
+    ).fetchall()
 
     if not rows:
         await message.answer(
@@ -1245,16 +1235,14 @@ async def logs(message: Message):
         await message.answer("Недостаточно прав.")
         return
 
-    execute(
+    rows = execute(
         """
         SELECT user_id, action, created_at
         FROM logs
         ORDER BY id DESC
         LIMIT 20
         """
-    )
-
-    rows = cur.fetchall()
+    ).fetchall()
 
     if not rows:
         await message.answer("Логи пусты.")
@@ -1278,11 +1266,9 @@ async def checkrole(message: Message):
         await require_sub(message)
         return
     
-    execute(
+    rows = execute(
         "SELECT * FROM roles"
-    )
-
-    rows = cur.fetchall()
+    ).fetchall()
 
     await message.answer(str(rows))
     
@@ -1297,11 +1283,9 @@ async def biz(callback: CallbackQuery):
 
     await bizlist(callback.message)
 
-    execute(
+    rows = execute(
         "SELECT id, name FROM businesses ORDER BY id"
-    )
-
-    rows = cur.fetchall()
+    ).fetchall()
 
     if not rows:
         await callback.message.answer(
@@ -1474,15 +1458,13 @@ async def admins(message: Message):
 
     await register_user(message)
 
-    execute(
-         """
+    rows = execute(
+        """
         SELECT id, nickname, position
         FROM admins
         ORDER BY id
         """
-    )
-
-    rows = cur.fetchall()
+    )fetchall()
 
     if not rows:
         await message.answer(
@@ -1539,13 +1521,11 @@ async def iadmin(message: Message):
 
     admin_id, nickname, vk, position, reputation = admin
 
-    execute("""
+    rating = execute("""
         SELECT id
         FROM admins
         ORDER BY reputation DESC, nickname
-    """)
-
-    rating = cur.fetchall()
+    """).fetchall()
 
     place = None
 
@@ -1854,14 +1834,12 @@ async def topadmin(message: Message):
         await require_sub(message)
         return
 
-    execute("""
+    rows = execute("""
         SELECT nickname, position, reputation
         FROM admins
         ORDER BY reputation DESC, nickname
         LIMIT 10
-    """)
-
-    rows = cur.fetchall()
+    """).fetchall()
 
     if not rows:
         await message.answer("Список администрации пуст.")
@@ -1941,9 +1919,7 @@ async def broadcast(message: Message):
     users_sent = 0
     chats_sent = 0
 
-    execute("SELECT user_id FROM users")
-
-    for (user_id,) in cur.fetchall():
+    for (user_id,) in execute("SELECT user_id FROM users").fetchall():
         try:
             await bot.send_message(user_id, text)
             users_sent += 1
@@ -1952,7 +1928,7 @@ async def broadcast(message: Message):
 
     execute("SELECT chat_id FROM chats")
 
-    for (chat_id,) in cur.fetchall():
+    for (chat_id,) in execute("SELECT chat_id FROM chats").fetchall():
         try:
             await bot.send_message(chat_id, text)
             chats_sent += 1
@@ -2152,13 +2128,11 @@ async def zbt(message: Message):
 
     await register_user(message)
     
-    execute("""
+    posts = execute("""
         SELECT chat_id, message_id
         FROM zbt_posts
         ORDER BY id
-    """)
-
-    posts = cur.fetchall()
+    """).fetchall()
 
     if not posts:
         await message.answer("Постов пока нет.")
