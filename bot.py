@@ -1464,7 +1464,7 @@ async def admins(message: Message):
         FROM admins
         ORDER BY id
         """
-    )fetchall()
+    ).fetchall()
 
     if not rows:
         await message.answer(
