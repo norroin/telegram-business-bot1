@@ -1478,33 +1478,44 @@ async def iadmin(message: Message):
         return
 
     await register_user(message)
-    
 
-    args = message.text.split()
+    args = message.text.split(maxsplit=1)
 
     if len(args) != 2:
         await message.answer(
-            "Пример:\n/iadmin 1"
+            "Пример:\n/iadmin 1\n/iadmin Nickname"
         )
         return
 
-    try:
-        admin_id = int(args[1])
-    except ValueError:
-        await message.answer("ID должен быть числом.")
-        return
+    search = args[1]
 
-    admin = execute("""
-        SELECT id, nickname, vk, position, reputation
-        FROM admins
-        WHERE id=%s
-    """, (admin_id,)).fetchone()
+
+    if search.isdigit():
+
+        admin = execute("""
+            SELECT id, nickname, vk, position, reputation, department
+            FROM admins
+            WHERE id=%s
+        """, (int(search),)).fetchone()
+
+    else:
+
+        admin = execute("""
+            SELECT id, nickname, vk, position, reputation, department
+            FROM admins
+            WHERE nickname ILIKE %s
+        """, (search,)).fetchone()
+
 
     if not admin:
-        await message.answer("Администратор не найден.")
+        await message.answer(
+            "Администратор не найден."
+        )
         return
 
-    admin_id, nickname, vk, position, reputation = admin
+
+    admin_id, nickname, vk, position, reputation, department = admin
+
 
     rating = execute("""
         SELECT id
@@ -1512,12 +1523,14 @@ async def iadmin(message: Message):
         ORDER BY reputation DESC, nickname
     """).fetchall()
 
+
     place = None
 
     for i, (aid,) in enumerate(rating, start=1):
         if aid == admin_id:
             place = i
             break
+
 
     if place == 1:
         medal = "🥇"
@@ -1528,15 +1541,18 @@ async def iadmin(message: Message):
     else:
         medal = f"#{place}"
 
+
     text = (
         "👤 Информация об администраторе\n\n"
         f"🆔 ID: {admin_id}\n"
         f"👤 Ник: {nickname}\n"
+        f"🏢 Отдел: {department or 'Не указан'}\n"
         f"💼 Должность: {position}\n\n"
         f"⭐ Репутация: {reputation}\n"
         f"🏆 Место в рейтинге: {medal}\n\n"
-        f"🔗 ВКонтакте:\n{vk}"
+        f"🔗 ВКонтакте:\n{vk or 'Не указан'}"
     )
+
 
     await message.answer(text)
 
