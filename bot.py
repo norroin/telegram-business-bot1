@@ -2246,6 +2246,66 @@ async def bani(message: Message):
     except Exception as e:
         await message.answer(f"Ошибка:\n{e}")
 
+@dp.message(Command("addo"))
+async def addo(message: Message):
+
+    if not await check_sub(message):
+        await require_sub(message)
+        return
+
+    if get_role(message.from_user.id) < 2:
+        await message.answer("Недостаточно прав.")
+        return
+
+    text = message.text.replace("/addo", "", 1).strip()
+
+    parts = [x.strip() for x in text.split("|")]
+
+    if len(parts) != 2:
+        await message.answer(
+            "Пример:\n"
+            "/addo 1 | Руководители"
+        )
+        return
+
+    try:
+        admin_id = int(parts[0])
+    except ValueError:
+        await message.answer("ID должен быть числом.")
+        return
+
+    department = parts[1]
+
+    if not execute(
+        "SELECT id FROM admins WHERE id=%s",
+        (admin_id,)
+    ).fetchone():
+        await message.answer("Администратор не найден.")
+        return
+
+    execute(
+        """
+        UPDATE admins
+        SET department=%s
+        WHERE id=%s
+        """,
+        (
+            department,
+            admin_id
+        )
+    )
+
+    db.commit()
+
+    add_log(
+        message.from_user.id,
+        f"Изменил отдел администратора {admin_id} на '{department}'"
+    )
+
+    await message.answer(
+        f"✅ Отдел администратора изменён на «{department}»."
+    )
+
 @dp.message()
 async def save_zbt(message: Message):
 
