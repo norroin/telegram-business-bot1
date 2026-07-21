@@ -10,7 +10,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 def connect():
     return psycopg.connect(
         DATABASE_URL,
-        autocommit=False
+        autocommit=True
     )
 
 
@@ -42,9 +42,12 @@ def execute(query, params=None):
         cur.execute(query, params or ())
         return cur
 
-    except (psycopg.OperationalError, psycopg.InterfaceError):
-
+    except (
+        psycopg.OperationalError,
+        psycopg.InterfaceError,
+        psycopg.errors.AdminShutdown,
+        psycopg.errors.IdleInTransactionSessionTimeout
+    ):
         reconnect()
-
         cur.execute(query, params or ())
         return cur
