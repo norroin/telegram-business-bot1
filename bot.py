@@ -127,7 +127,7 @@ def add_log(user_id, action):
         """,
         (user_id, action)
     )
-        db.commit()
+    
 
 class AddBusiness(StatesGroup):
     id = State()
@@ -2302,7 +2302,7 @@ async def addo(message: Message):
     await message.answer(
         f"✅ Администратору {admin_id} установлен отдел «{department}»."
     )
-    
+
 @dp.message()
 async def save_zbt(message: Message):
 
