@@ -2256,30 +2256,30 @@ async def addo(message: Message):
         await message.answer("Недостаточно прав.")
         return
 
-    text = message.text.replace("/addo", "", 1).strip()
+    args = message.text.split(maxsplit=2)
 
-    parts = [x.strip() for x in text.split("|")]
-
-    if len(parts) != 2:
+    if len(args) < 3:
         await message.answer(
             "Пример:\n"
-            "/addo 1 | Руководители"
+            "/addo 1 Руководители"
         )
         return
 
     try:
-        admin_id = int(parts[0])
+        admin_id = int(args[1])
     except ValueError:
         await message.answer("ID должен быть числом.")
         return
 
-    department = parts[1]
+    department = args[2]
 
     if not execute(
         "SELECT id FROM admins WHERE id=%s",
         (admin_id,)
     ).fetchone():
-        await message.answer("Администратор не найден.")
+        await message.answer(
+            "Администратор не найден."
+        )
         return
 
     execute(
@@ -2300,7 +2300,7 @@ async def addo(message: Message):
     )
 
     await message.answer(
-        f"✅ Отдел администратора изменён на «{department}»."
+        f"✅ Администратору {admin_id} установлен отдел «{department}»."
     )
 
 @dp.message()
