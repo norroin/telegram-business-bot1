@@ -1445,7 +1445,7 @@ async def admins(message: Message):
         await require_sub(message)
         return
 
-    await register_user(message)
+        await register_user(message)
 
     rows = execute("""
         SELECT id, nickname, position, department
