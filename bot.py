@@ -2271,7 +2271,7 @@ async def addo(message: Message):
         await message.answer("ID должен быть числом.")
         return
 
-    department = args[2]
+    department = " ".join(args[2].split())
 
     if not execute(
         "SELECT id FROM admins WHERE id=%s",
