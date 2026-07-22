@@ -1445,41 +1445,39 @@ async def admins(message: Message):
         await require_sub(message)
         return
 
-        await register_user(message)
+    await register_user(message)
 
-    rows = execute("""
-        SELECT id, nickname, position, department
-        FROM admins
-        ORDER BY department, nickname
-    """).fetchall()
+    departments = [
+        ("👑", " Руководители"),
+        ("⭐", " Старшая администрация"),
+        ("🛡", " Администрация"),
+        ("👮", " Старший модератор"),
+        ("👮", " Модератор")
+        ("👮", " Младший модератор")
 
-    if not rows:
-        await message.answer(
-            "Список администрации пуст."
-        )
-        return
+    ]
 
     text = "👮 Администрация Брянска\n"
 
-    current_department = None
-    number = 1
+    for emoji, department in departments:
 
-    for admin_id, nickname, position, department in rows:
+        rows = execute(
+            """
+            SELECT id, nickname, position
+            FROM admins
+            WHERE department=%s
+            ORDER BY id
+            """,
+            (department,)
+        ).fetchall()
 
-        department = department or "Без отдела"
+        if not rows:
+            continue
 
-        if department != current_department:
-            current_department = department
-            number = 1
-            text += f"\n📂 {department}\n\n"
+        text += f"\n{emoji} {department}\n\n"
 
-        text += (
-            f"{number}. {nickname}\n"
-            f"🆔 {admin_id}\n"
-            f"💼 {position}\n\n"
-        )
-
-        number += 1
+        for admin_id, nickname, position in rows:
+            text += f"{admin_id} - {nickname} - {position}\n"
 
     await message.answer(text)
 
