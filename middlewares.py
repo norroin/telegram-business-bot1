@@ -4,9 +4,14 @@ from aiogram import BaseMiddleware
 from aiogram.types import Message
 
 from database import execute
-from bot import check_sub, require_sub, register_user
+from utils import (
+    check_sub,
+    require_sub,
+    register_user,
+)
 
 cooldowns = {}
+
 
 class MainMiddleware(BaseMiddleware):
 
@@ -21,13 +26,19 @@ class MainMiddleware(BaseMiddleware):
         if not event.text.startswith("/"):
             return await handler(event, data)
 
+        bot = data["bot"]
+
         # Проверка подписки
-        if not await check_sub(event):
+        if not await check_sub(bot, -1002484763518, event):
             await require_sub(event)
             return
 
         # Регистрация пользователя
-        await register_user(event)
+        await register_user(
+            bot,
+            5639087435,
+            event
+        )
 
         # Задержка
         user_id = event.from_user.id
@@ -46,7 +57,7 @@ class MainMiddleware(BaseMiddleware):
         execute(
             """
             INSERT INTO logs(user_id, action)
-            VALUES(%s, %s)
+            VALUES (%s, %s)
             """,
             (
                 user_id,
