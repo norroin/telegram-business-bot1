@@ -87,7 +87,7 @@ async def register_user(message: Message):
             )
         )
 
-        db.commit()
+        
 
         await bot.send_message(
             OWNER_ID,
@@ -445,7 +445,7 @@ async def add_location(message: Message, state: FSMContext):
         )
     )
 
-    db.commit()
+    
 
     await state.clear()
     await message.answer("Бизнес добавлен.")
@@ -484,7 +484,7 @@ async def owner_save(message: Message, state: FSMContext):
         "UPDATE businesses SET owner=%s WHERE id=%s",
         (message.text, data["id"])
     )
-    db.commit()
+    
 
     await state.clear()
     await message.answer("Владелец изменён.")
@@ -523,7 +523,7 @@ async def location_save(message: Message, state: FSMContext):
         "UPDATE businesses SET location=%s WHERE id=%s",
         (message.text, data["id"])
     )
-    db.commit()
+    
 
     await state.clear()
     await message.answer("Адрес обновлён.")
@@ -564,7 +564,7 @@ async def photo_save(message: Message, state: FSMContext):
         "UPDATE businesses SET photo_id=%s WHERE id=%s",
         (photo_id, data["id"])
     )
-    db.commit()
+    
 
     await state.clear()
     await message.answer("Фото сохранено.")
@@ -609,7 +609,7 @@ async def set_role(message: Message):
         (user_id, role)
     )
 
-        db.commit()
+        
 
     await message.answer(
         f"Роль {role} выдана пользователю {user_id}"
@@ -641,7 +641,7 @@ async def cbiz(message: Message):
         "UPDATE businesses SET category=%s WHERE id=%s",
         (category, business_id)
     )
-    db.commit()
+    
 
     await message.answer("Категория сохранена.")
 
@@ -669,7 +669,7 @@ async def delcbiz(message: Message):
         (args[1],)
     )
 
-        db.commit()
+        
 
     await message.answer(
         "Категория удалена."
@@ -709,7 +709,7 @@ async def nbiz(message: Message):
         (new_name, business_id)
     )
 
-    db.commit()
+    
 
     await message.answer("Название бизнеса изменено.")
 
@@ -747,7 +747,6 @@ async def lbiz(message: Message):
         (new_location, business_id)
     ) 
 
-    db.commit()
 
     await message.answer(
         "Адрес бизнеса изменён."
@@ -786,7 +785,6 @@ async def delbiz(message: Message):
         (business_id,)
     )
 
-    db.commit()
 
     add_log(
         message.from_user.id,
@@ -831,7 +829,6 @@ async def vbiz(message: Message):
         (new_owner, business_id)
     )
 
-    db.commit()
 
     add_log(
     message.from_user.id,
@@ -896,7 +893,7 @@ async def fbiz_save(message: Message, state: FSMContext):
         (photo_id, data["id"])
     )
 
-    db.commit()
+
 
     await state.clear()
 
@@ -1203,7 +1200,7 @@ async def addbiz(message: Message):
         )
     )
 
-    db.commit()
+    
 
     await message.answer(
         f"✅ Бизнес создан.\n\n"
@@ -1429,7 +1426,7 @@ async def addadm(message: Message):
         )
     )
 
-    db.commit()
+    
 
     add_log(
         message.from_user.id,
@@ -1610,7 +1607,7 @@ async def deladm(message: Message):
         (admin_id,)
     )
 
-    db.commit()
+    
 
     add_log(
         message.from_user.id,
@@ -1671,7 +1668,7 @@ async def dadm(message: Message):
         )
     )
 
-    db.commit()
+    
 
     add_log(
         message.from_user.id,
@@ -1733,7 +1730,7 @@ async def repadm(message: Message):
         )
     )
 
-    db.commit()
+    
 
     add_log(
         message.from_user.id,
@@ -1825,7 +1822,7 @@ async def rep(message: Message):
         )
     )
 
-    db.commit()
+    
 
     await message.answer(
         "Спасибо за вашу оценку!"
@@ -2006,7 +2003,7 @@ async def addbs(message: Message):
         (location, end_time)
     )
 
-    db.commit()
+    
 
     await message.answer("✅ Активная БС добавлена.")
 
@@ -2032,7 +2029,7 @@ async def bs(message: Message):
 
     if datetime.now() >= end:
         execute("DELETE FROM family_battle")
-        db.commit()
+
 
         await message.answer("Активных битв семей нет.")
         return
@@ -2055,7 +2052,7 @@ async def delbs(message: Message):
         return
 
     execute("DELETE FROM family_battle")
-    db.commit()
+
 
     await message.answer("✅ Активная битва семей удалена.")
 
@@ -2169,7 +2166,7 @@ async def delzbt(message: Message):
         (args[1],)
     )
 
-    db.commit()
+    
 
     await message.answer("✅ Пост удалён.")
 
@@ -2323,7 +2320,7 @@ async def save_zbt(message: Message):
         )
     )
 
-    db.commit()
+
 
     await message.answer("✅ Пост успешно сохранён.")
 
@@ -2338,7 +2335,7 @@ async def save_chat(message: Message):
             (message.chat.id,)
         )
 
-        db.commit()
+        
 
 async def main():
     print("BOT STARTED")
