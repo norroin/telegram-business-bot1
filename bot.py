@@ -1,4 +1,3 @@
-
 import os
 import asyncio
 import init_db
@@ -18,12 +17,15 @@ from aiogram.fsm.context import FSMContext
 
 from database import cur, db, execute
 
+from middlewares import MainMiddleware
 
 TOKEN = os.getenv("TOKEN")
 ADMINS = [5639087435]
 
 bot = Bot(TOKEN)
 dp = Dispatcher()
+
+dp.message.middleware(MainMiddleware())
 
 waiting_zbt = set()
 
