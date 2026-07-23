@@ -27,11 +27,12 @@ from utils import (
     add_log,
 )
 
+from middlewares import MainMiddleware
+
 TOKEN = os.getenv("TOKEN")
 ADMINS = [5639087435]
 
-bot = Bot(TOKEN)
-dp = Dispatcher()
+dp.message.middleware(MainMiddleware())
 
 waiting_zbt = set()
 
