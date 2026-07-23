@@ -17,6 +17,16 @@ from aiogram.fsm.context import FSMContext
 
 from database import cur, db, execute 
 
+from utils import (
+    check_sub,
+    require_sub,
+    register_user,
+    get_role,
+    is_editor,
+    is_creator,
+    add_log,
+)
+
 TOKEN = os.getenv("TOKEN")
 ADMINS = [5639087435]
 
@@ -28,104 +38,6 @@ waiting_zbt = set()
 CHANNEL_ID = -1002484763518
 OWNER_ID = 5639087435
 
-async def check_sub(message: Message):
-    try:
-        member = await bot.get_chat_member(
-            CHANNEL_ID,
-            message.from_user.id
-        )
-
-        return member.status in [
-            "member",
-            "administrator",
-            "creator"
-        ]
-    except:
-        return False
-
-
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-
-
-async def require_sub(message: Message):
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="📢 Подписаться",
-                    url="https://t.me/willyblackrussia"
-                )
-            ]
-        ]
-    )
-
-    await message.answer(
-        "❌ Для использования бота необходимо подписаться на канал.",
-        reply_markup=kb
-    )
-
-
-async def register_user(message: Message):
-    user = execute(
-        "SELECT user_id FROM users WHERE user_id=%s",
-        (message.from_user.id,)
-    ).fetchone()
-
-    if not user:
-        execute(
-            """
-            INSERT INTO users(user_id, username, first_name, reg_date)
-            VALUES (%s, %s, %s, %s)
-            """,
-            (
-                message.from_user.id,
-                message.from_user.username,
-                message.from_user.full_name,
-                datetime.now().strftime("%d.%m.%Y")
-            )
-        )
-
-        
-
-        await bot.send_message(
-            OWNER_ID,
-            f"""🆕 Новый пользователь
-
-👤 {message.from_user.full_name}
-🆔 {message.from_user.id}
-🔗 @{message.from_user.username if message.from_user.username else 'нет'}
-"""
-        )
-
-
-def get_role(user_id):
-    row = execute(
-        "SELECT role FROM roles WHERE user_id=%s",
-        (user_id,)
-    ).fetchone()
-
-    if row:
-        return row[0]
-
-    return 0
-
-
-def is_editor(user_id):
-    return get_role(user_id) >= 1
-
-
-def is_creator(user_id):
-    return get_role(user_id) >= 2
-
-def add_log(user_id, action):
-        execute(
-        """
-        INSERT INTO logs(user_id, action)
-        VALUES (%s, %s)
-        """,
-        (user_id, action)
-    )
-    
 
 class AddBusiness(StatesGroup):
     id = State()
@@ -159,11 +71,11 @@ from aiogram.types import (
 @dp.message(Command("start"))
 async def start(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
 
-    await register_user(message)
+    await register_user(bot, OWNER_ID, message)
 
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
@@ -181,11 +93,12 @@ async def start(message: Message):
 @dp.message(Command("business"))
 async def business(message: Message):
     
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
 
-    await register_user(message)
+    await register_user(bot, OWNER_ID, message)
+
     
     args = message.text.split(maxsplit=1)
 
@@ -274,11 +187,12 @@ async def business(message: Message):
 @dp.message(Command("bizlist"))
 async def bizlist(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
 
-    await register_user(message)
+    await register_user(bot, OWNER_ID, message)
+
 
     rows = execute(
         "SELECT id, name FROM businesses ORDER BY id"
@@ -298,9 +212,12 @@ async def bizlist(message: Message):
 @dp.message(Command("admintab"))
 async def admintab(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
 
     if get_role(message.from_user.id) < 2:
         await message.answer("❌ Недостаточно прав.")
@@ -324,9 +241,11 @@ async def admintab(message: Message):
 @dp.message(Command("cancel"))
 async def cancel(message: Message, state: FSMContext):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
     
     current = await state.get_state()
 
@@ -339,7 +258,7 @@ async def cancel(message: Message, state: FSMContext):
 @dp.message(F.text == "➕ Добавить бизнес")
 async def add_start(message: Message, state: FSMContext):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
     
@@ -353,7 +272,7 @@ async def add_start(message: Message, state: FSMContext):
 @dp.message(AddBusiness.name)
 async def add_name(message: Message, state: FSMContext):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
 
@@ -364,7 +283,7 @@ async def add_name(message: Message, state: FSMContext):
 @dp.message(AddBusiness.id)
 async def add_id(message: Message, state: FSMContext):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
 
@@ -398,10 +317,10 @@ async def add_id(message: Message, state: FSMContext):
 @dp.message(AddBusiness.owner)
 async def add_owner(message: Message, state: FSMContext):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
-    
+   
     await state.update_data(owner=message.text)
     await state.set_state(AddBusiness.category)
     await message.answer("Введите категорию")
@@ -410,9 +329,12 @@ async def add_owner(message: Message, state: FSMContext):
 @dp.message(AddBusiness.category)
 async def add_category(message: Message, state: FSMContext):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
     
     await state.update_data(category=message.text)
     await state.set_state(AddBusiness.location)
@@ -422,9 +344,12 @@ async def add_category(message: Message, state: FSMContext):
 @dp.message(AddBusiness.location)
 async def add_location(message: Message, state: FSMContext):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
     
     data = await state.get_data()
 
@@ -451,9 +376,12 @@ async def add_location(message: Message, state: FSMContext):
 @dp.message(F.text == "👤 Изменить владельца")
 async def owner_start(message: Message, state: FSMContext):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
     
     await state.set_state(ChangeOwner.business_id)
     await message.answer("Введите ID бизнеса")
@@ -461,9 +389,12 @@ async def owner_start(message: Message, state: FSMContext):
 @dp.message(ChangeOwner.business_id)
 async def owner_bid(message: Message, state: FSMContext):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
     
     await state.update_data(id=message.text)
     await state.set_state(ChangeOwner.owner)
@@ -472,9 +403,12 @@ async def owner_bid(message: Message, state: FSMContext):
 @dp.message(ChangeOwner.owner)
 async def owner_save(message: Message, state: FSMContext):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
     
     data = await state.get_data()
 
@@ -490,9 +424,12 @@ async def owner_save(message: Message, state: FSMContext):
 @dp.message(F.text == "📍 Изменить адрес")
 async def location_start(message: Message, state: FSMContext):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
     
     await state.set_state(ChangeLocation.business_id)
     await message.answer("Введите ID бизнеса")
@@ -500,9 +437,12 @@ async def location_start(message: Message, state: FSMContext):
 @dp.message(ChangeLocation.business_id)
 async def location_bid(message: Message, state: FSMContext):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
     
     await state.update_data(id=message.text)
     await state.set_state(ChangeLocation.location)
@@ -511,9 +451,12 @@ async def location_bid(message: Message, state: FSMContext):
 @dp.message(ChangeLocation.location)
 async def location_save(message: Message, state: FSMContext):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
     
     data = await state.get_data()
 
@@ -529,9 +472,12 @@ async def location_save(message: Message, state: FSMContext):
 @dp.message(F.text == "📷 Добавить фото")
 async def photo_start(message: Message, state: FSMContext):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
     
     await state.set_state(UploadPhoto.business_id)
     await message.answer("Введите ID бизнеса")
@@ -539,9 +485,12 @@ async def photo_start(message: Message, state: FSMContext):
 @dp.message(UploadPhoto.business_id)
 async def photo_bid(message: Message, state: FSMContext):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
     
     await state.update_data(id=message.text)
     await state.set_state(UploadPhoto.photo)
@@ -550,9 +499,12 @@ async def photo_bid(message: Message, state: FSMContext):
 @dp.message(UploadPhoto.photo, F.photo)
 async def photo_save(message: Message, state: FSMContext):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
     
     data = await state.get_data()
 
@@ -571,9 +523,12 @@ async def photo_save(message: Message, state: FSMContext):
 @dp.message(Command("setrole"))
 async def set_role(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
 
     if message.from_user.id not in ADMINS:
         return
@@ -616,9 +571,12 @@ async def set_role(message: Message):
 @dp.message(Command("cbiz"))
 async def cbiz(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
     
     if not is_editor(message.from_user.id):
         await message.answer("Недостаточно прав.")
@@ -646,9 +604,12 @@ async def cbiz(message: Message):
 @dp.message(Command("delcbiz"))
 async def delcbiz(message: Message):
     
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
     
     if not is_editor(message.from_user.id):
         await message.answer("Недостаточно прав.")
@@ -676,9 +637,12 @@ async def delcbiz(message: Message):
 @dp.message(Command("nbiz"))
 async def nbiz(message: Message):
     
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
     
     if not is_creator(message.from_user.id):
         await message.answer("Недостаточно прав.")
@@ -714,9 +678,12 @@ async def nbiz(message: Message):
 @dp.message(Command("lbiz"))
 async def lbiz(message: Message):
     
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
     
     if not is_creator(message.from_user.id):
         await message.answer("Недостаточно прав.")
@@ -753,9 +720,12 @@ async def lbiz(message: Message):
 @dp.message(Command("delbiz"))
 async def delbiz(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
 
     if not is_creator(message.from_user.id):
         await message.answer("Недостаточно прав.")
@@ -796,9 +766,12 @@ async def delbiz(message: Message):
 @dp.message(Command("vbiz"))
 async def vbiz(message: Message):
     
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
     
     if not is_editor(message.from_user.id):
         await message.answer("Недостаточно прав.")
@@ -840,9 +813,12 @@ async def vbiz(message: Message):
 @dp.message(Command("fbiz"))
 async def fbiz(message: Message, state: FSMContext):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
 
     if not is_editor(message.from_user.id):
         await message.answer("Недостаточно прав.")
@@ -878,9 +854,12 @@ async def fbiz(message: Message, state: FSMContext):
 @dp.message(ChangePhotoCmd.photo, F.photo)
 async def fbiz_save(message: Message, state: FSMContext):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
     
     data = await state.get_data()
 
@@ -902,9 +881,12 @@ async def fbiz_save(message: Message, state: FSMContext):
 @dp.message(Command("categories"))
 async def categories(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
 
     await register_user(message)
     
@@ -932,9 +914,12 @@ async def categories(message: Message):
 @dp.message(Command("support"))
 async def support(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
 
     await register_user(message)
 
@@ -988,9 +973,12 @@ async def support(message: Message):
 @dp.message(Command("role"))
 async def role(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
 
     role = get_role(message.from_user.id)
 
@@ -1007,9 +995,12 @@ async def role(message: Message):
 @dp.message(Command("userrole"))
 async def userrole(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
-        return    
+        return
+
+    await register_user(bot, OWNER_ID, message)
+    
 
     if not is_creator(message.from_user.id):
         await message.answer(
@@ -1049,9 +1040,12 @@ async def userrole(message: Message):
 @dp.message(F.text == "📋 Бизнесы")
 async def menu_bizlist(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
     
     rows = execute(
         "SELECT id, name FROM businesses ORDER BY id"
@@ -1071,9 +1065,12 @@ async def menu_bizlist(message: Message):
 @dp.message(F.text == "📂 Категории")
 async def menu_categories(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
-        return    
+        return
+
+    await register_user(bot, OWNER_ID, message)
+   
 
     rows = execute(
         """
@@ -1101,9 +1098,11 @@ async def menu_categories(message: Message):
 @dp.message(F.text == "ℹ️ Помощь")
 async def menu_help(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
-        return    
+        return
+
+    await register_user(bot, OWNER_ID, message)
 
     role = get_role(message.from_user.id)
 
@@ -1140,9 +1139,12 @@ async def menu_help(message: Message):
 @dp.message(Command("addbiz"))
 async def addbiz(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
-        return    
+        return
+
+    await register_user(bot, OWNER_ID, message)
+  
 
     if not is_creator(message.from_user.id):
         await message.answer("Недостаточно прав.")
@@ -1209,9 +1211,12 @@ async def addbiz(message: Message):
 @dp.message(Command("logs"))
 async def logs(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
     
     if not is_creator(message.from_user.id):
         await message.answer("Недостаточно прав.")
@@ -1244,9 +1249,12 @@ async def logs(message: Message):
 @dp.message(Command("checkrole"))
 async def checkrole(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
     
     rows = execute(
         "SELECT * FROM roles"
@@ -1257,9 +1265,11 @@ async def checkrole(message: Message):
 @dp.callback_query(F.data == "biz")
 async def biz(callback: CallbackQuery):
 
-    if not await check_sub(callback.message):
-        await require_sub(callback.message)
+    if not await check_sub(bot, CHANNEL_ID, message):
+        await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
 
     await callback.answer()
 
@@ -1286,9 +1296,11 @@ async def biz(callback: CallbackQuery):
 @dp.callback_query(F.data == "categories")
 async def categories_btn(callback: CallbackQuery):
 
-    if not await check_sub(callback.message):
-        await require_sub(callback.message)
+    if not await check_sub(bot, CHANNEL_ID, message):
+        await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
 
     await callback.answer()
 
@@ -1298,9 +1310,11 @@ async def categories_btn(callback: CallbackQuery):
 @dp.callback_query(F.data == "help")
 async def help_btn(callback: CallbackQuery):
 
-    if not await check_sub(callback.message):
-        await require_sub(callback.message)
+    if not await check_sub(bot, CHANNEL_ID, message):
+        await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
 
     await callback.answer()
 
@@ -1320,7 +1334,6 @@ async def set_commands(bot):
         BotCommand(command="iadmin", description="Информация о админе"),
         BotCommand(command="deladm", description="Удалить админа из списка"),
         BotCommand(command="dadm", description="Изменить должность"),
-        BotCommand(command="admin", description="Список администрации"),
         BotCommand(command="rep", description="Проголосвать за репутацию"),
         BotCommand(command="topadmin", description="топ репутации администрации"),
         BotCommand(command="bug", description="Отправить предложение по улучшению"),
@@ -1337,9 +1350,12 @@ async def set_commands(bot):
 @dp.message(Command("clear"))
 async def clear_chat(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
-        return    
+        return
+
+    await register_user(bot, OWNER_ID, message)
+  
 
     if get_role(message.from_user.id) < 2:
         await message.answer("❌ Команда доступна только создателю.")
@@ -1370,9 +1386,12 @@ async def clear_chat(message: Message):
 @dp.message(Command("addadm"))
 async def addadm(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
 
     if get_role(message.from_user.id) < 2:
         await message.answer("Недостаточно прав.")
@@ -1436,9 +1455,12 @@ async def addadm(message: Message):
 @dp.message(Command("admins"))
 async def admins(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
 
     await register_user(message)
 
@@ -1481,9 +1503,12 @@ async def admins(message: Message):
 @dp.message(Command("iadmin"))
 async def iadmin(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
 
     await register_user(message)
 
@@ -1567,9 +1592,12 @@ async def iadmin(message: Message):
 @dp.message(Command("deladm"))
 async def deladm(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
 
     if get_role(message.from_user.id) < 2:
         await message.answer("Недостаточно прав.")
@@ -1619,9 +1647,12 @@ async def deladm(message: Message):
 @dp.message(Command("dadm"))
 async def dadm(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
 
     if get_role(message.from_user.id) < 1:
         await message.answer("Недостаточно прав.")
@@ -1680,9 +1711,12 @@ async def dadm(message: Message):
 @dp.message(Command("repadm"))
 async def repadm(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
 
     if get_role(message.from_user.id) < 1:
         await message.answer("Недостаточно прав.")
@@ -1742,9 +1776,12 @@ async def repadm(message: Message):
 @dp.message(Command("rep"))
 async def rep(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
 
     args = message.text.split()
 
@@ -1829,9 +1866,12 @@ async def rep(message: Message):
 @dp.message(Command("topadmin"))
 async def topadmin(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
 
     rows = execute("""
         SELECT nickname, position, reputation
@@ -1868,9 +1908,12 @@ async def topadmin(message: Message):
 @dp.message(Command("bug"))
 async def bug(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
 
     args = message.text.split(maxsplit=1)
 
@@ -1973,6 +2016,13 @@ async def stats(message: Message):
 @dp.message(Command("addbs"))
 async def addbs(message: Message):
 
+    if not await check_sub(bot, CHANNEL_ID, message):
+        await require_sub(message)
+        return
+
+    await register_user(bot, OWNER_ID, message)
+
+
     if get_role(message.from_user.id) < 1:
         return
 
@@ -2010,6 +2060,13 @@ from datetime import datetime
 @dp.message(Command("bs"))
 async def bs(message: Message):
 
+    if not await check_sub(bot, CHANNEL_ID, message):
+        await require_sub(message)
+        return
+
+    await register_user(bot, OWNER_ID, message)
+
+
     row = execute(
         "SELECT location, end_time FROM family_battle LIMIT 1"
     ).fetchone()
@@ -2041,9 +2098,12 @@ async def bs(message: Message):
 @dp.message(Command("delbs"))
 async def delbs(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
 
     if get_role(message.from_user.id) < 1:
         await message.answer("Недостаточно прав.")
@@ -2057,9 +2117,12 @@ async def delbs(message: Message):
 @dp.message(Command("profile"))
 async def profile(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
 
     args = message.text.split()
 
@@ -2123,9 +2186,12 @@ async def profile(message: Message):
 @dp.message(Command("zbt"))
 async def zbt(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
+
 
     await register_user(message)
     
@@ -2244,9 +2310,11 @@ async def bani(message: Message):
 @dp.message(Command("addo"))
 async def addo(message: Message):
 
-    if not await check_sub(message):
+    if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
+
+    await register_user(bot, OWNER_ID, message)
 
     if get_role(message.from_user.id) < 2:
         await message.answer("Недостаточно прав.")
