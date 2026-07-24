@@ -890,9 +890,6 @@ async def categories(message: Message):
         return
 
     await register_user(bot, OWNER_ID, message)
-
-
-    await register_user(message)
     
     rows = execute(
         """
@@ -923,9 +920,6 @@ async def support(message: Message):
         return
 
     await register_user(bot, OWNER_ID, message)
-
-
-    await register_user(message)
 
     role = get_role(message.from_user.id)
 
@@ -1466,8 +1460,6 @@ async def admins(message: Message):
     await register_user(bot, OWNER_ID, message)
 
 
-    await register_user(message)
-
     departments = [
         ("🔴", "Руководители"),
         ("🟣", "Кураторы"),
@@ -1512,9 +1504,6 @@ async def iadmin(message: Message):
         return
 
     await register_user(bot, OWNER_ID, message)
-
-
-    await register_user(message)
 
     args = message.text.split(maxsplit=1)
 
@@ -2195,9 +2184,6 @@ async def zbt(message: Message):
         return
 
     await register_user(bot, OWNER_ID, message)
-
-
-    await register_user(message)
     
     posts = execute("""
         SELECT chat_id, message_id
