@@ -2424,7 +2424,6 @@ async def casino(message: Message):
     text = (
         "🎰 Информация о казино\n\n"
         f"👤 Последний владелец:\n{owner}\n\n"
-        f"📅 Последняя дата взятия:\n{take_date}\n\n"
         f"🎯 Дата ловли:\n{catch_date}"
     )
 
