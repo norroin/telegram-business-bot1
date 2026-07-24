@@ -86,6 +86,16 @@ ALTER TABLE admins
 ADD COLUMN IF NOT EXISTS department TEXT
 """,
 
+"""
+CREATE TABLE IF NOT EXISTS casino(
+    id INTEGER PRIMARY KEY DEFAULT 1,
+    last_owner TEXT,
+    last_take_date TEXT,
+    catch_date TEXT
+)
+""",
+
+
 ]
 
 for table in tables:

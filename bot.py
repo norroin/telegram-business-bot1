@@ -1340,7 +1340,8 @@ async def set_commands(bot):
         BotCommand(command="zbt", description="Открыть список збт"),
         BotCommand(command="addzbt", description="Добавить пост о збт"),
         BotCommand(command="del", description="Удалить пост о збт"),
-        BotCommand(command="repadm", description="Изменить репутацию ")
+        BotCommand(command="repadm", description="Изменить репутацию "),
+        BotCommand(command="casino", description="Информация о казино")
     ]
 
     await bot.set_my_commands(commands)
@@ -2355,6 +2356,96 @@ async def addo(message: Message):
 
     await message.answer(
         f"✅ Администратору {admin_id} установлен отдел «{department}»."
+    )
+
+@dp.message(Command("addkaz"))
+async def addkaz(message: Message):
+
+    if get_role(message.from_user.id) < 1:
+        await message.answer("Недостаточно прав.")
+        return
+
+    args = message.text.split(maxsplit=2)
+
+    if len(args) != 3:
+        await message.answer(
+            "Пример:\n"
+            "/addkaz Willy 25.07.2026"
+        )
+        return
+
+    owner = args[1]
+    catch_date = args[2]
+
+    take_date = datetime.now().strftime("%d.%m.%Y %H:%M")
+
+    execute("DELETE FROM casino")
+
+    execute(
+        """
+        INSERT INTO casino
+        (id, last_owner, last_take_date, catch_date)
+        VALUES (1, %s, %s, %s)
+        """,
+        (
+            owner,
+            take_date,
+            catch_date
+        )
+    )
+
+    add_log(
+        message.from_user.id,
+        f"Добавил казино ({owner})"
+    )
+
+    await message.answer("✅ Информация о казино обновлена.")
+
+@dp.message(Command("casino"))
+async def casino(message: Message):
+
+    row = execute(
+        """
+        SELECT
+            last_owner,
+            last_take_date,
+            catch_date
+        FROM casino
+        LIMIT 1
+        """
+    ).fetchone()
+
+    if not row:
+        await message.answer("❌ Информация о казино отсутствует.")
+        return
+
+    owner, take_date, catch_date = row
+
+    text = (
+        "🎰 Информация о казино\n\n"
+        f"👤 Последний владелец:\n{owner}\n\n"
+        f"📅 Последняя дата взятия:\n{take_date}\n\n"
+        f"🎯 Дата ловли:\n{catch_date}"
+    )
+
+    await message.answer(text)
+
+@dp.message(Command("delkaz"))
+async def delkaz(message: Message):
+
+    if get_role(message.from_user.id) < 1:
+        await message.answer("Недостаточно прав.")
+        return
+
+    execute("DELETE FROM casino")
+
+    add_log(
+        message.from_user.id,
+        "Удалил информацию о казино"
+    )
+
+    await message.answer(
+        "✅ Информация о казино удалена."
     )
 
 @dp.message()
