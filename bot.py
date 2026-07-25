@@ -1,6 +1,8 @@
 import os
 import asyncio
 import init_db
+import cloudinary
+import cloudinary.uploader
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
