@@ -2432,10 +2432,9 @@ async def casino(message: Message):
 
     text = (
         "🎰 Информация о казино\n\n"
-        f"👤 Последний владелец:\n{owner}\n\n"ё1    й1
+        f"👤 Последний владелец:\n{owner}\n\n"
         f"🎯 Дата ловли:\n{catch_date}"
     )
-
     await message.answer(text)
 
 @dp.message(Command("delkaz"))
