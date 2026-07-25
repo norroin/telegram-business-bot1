@@ -47,7 +47,7 @@ CHANNEL_ID = -1002484763518
 OWNER_ID = 5639087435
 
 cloudinary.config(
-    cloud_name="Root",
+    cloud_name="p606sotg",
     api_key="398575342634263",
     api_secret="5nwNll0tGlmFTnkYY5QyENPsv-8",
     secure=True
