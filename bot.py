@@ -39,8 +39,17 @@ dp.message.middleware(MainMiddleware())
 
 waiting_zbt = set()
 
+UPLOAD_WAIT = set()
+
 CHANNEL_ID = -1002484763518
 OWNER_ID = 5639087435
+
+cloudinary.config(
+    cloud_name="Root",
+    api_key="398575342634263",
+    api_secret="5nwNll0tGlmFTnkYY5QyENPsv-8",
+    secure=True
+)
 
 
 class AddBusiness(StatesGroup):
@@ -2423,7 +2432,7 @@ async def casino(message: Message):
 
     text = (
         "🎰 Информация о казино\n\n"
-        f"👤 Последний владелец:\n{owner}\n\n"
+        f"👤 Последний владелец:\n{owner}\n\n"ё1    й1
         f"🎯 Дата ловли:\n{catch_date}"
     )
 
@@ -2445,6 +2454,48 @@ async def delkaz(message: Message):
 
     await message.answer(
         "✅ Информация о казино удалена."
+    )
+
+@dp.message(Command("upload"))
+async def upload(message: Message):
+
+    UPLOAD_WAIT.add(message.from_user.id)
+
+    await message.answer(
+        "📎 Отправьте фото или видео."
+    )
+
+@dp.message(F.photo | F.video)
+async def upload_file(message: Message):
+
+    if message.from_user.id not in UPLOAD_WAIT:
+        return
+
+    if message.photo:
+        file_id = message.photo[-1].file_id
+        filename = f"{message.from_user.id}.jpg"
+        resource = "image"
+
+    else:
+        file_id = message.video.file_id
+        filename = f"{message.from_user.id}.mp4"
+        resource = "video"
+
+    file = await bot.get_file(file_id)
+
+    await bot.download_file(file.file_path, filename)
+
+    result = cloudinary.uploader.upload(
+        filename,
+        resource_type=resource
+    )
+
+    os.remove(filename)
+
+    UPLOAD_WAIT.remove(message.from_user.id)
+
+    await message.answer(
+        f"✅ Ссылка:\n{result['secure_url']}"
     )
 
 @dp.message()
