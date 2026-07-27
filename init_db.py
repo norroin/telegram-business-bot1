@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS reports(
     created_at TIMESTAMP DEFAULT NOW(),
     closed_at TIMESTAMP
 )
-"""
+""",
 
 """
 CREATE TABLE IF NOT EXISTS report_messages(
