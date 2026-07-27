@@ -2696,8 +2696,7 @@ async def repsms(message: Message):
         )
         return
 
-    user_id = report[0]
-    waiting_rep_answer[message.from_user.id] = (report_id, user_id)
+    report_id = int(args[1])
 
     report = execute(
         """
@@ -2712,7 +2711,9 @@ async def repsms(message: Message):
         await message.answer("Обращение не найдено.")
         return
 
-    waiting_rep_answer[message.from_user.id] = report_id
+    user_id = report[0]
+
+    waiting_rep_answer[message.from_user.id] = (report_id, user_id)
 
     await message.answer(
         f"✍ Напишите ответ пользователю по обращению #{report_id}"
@@ -2875,22 +2876,6 @@ async def send_rep_answer(message: Message):
         return
 
     report_id, user_id = waiting_rep_answer.pop(message.from_user.id)
-
-
-    report = execute(
-        """
-        SELECT user_id
-        FROM reports
-        WHERE id=%s
-        """,
-        (report_id,)
-    ).fetchone()
-
-    if not report:
-        await message.answer("Обращение не найдено.")
-        return
-
-    user_id = report[0]
 
     execute(
         """
