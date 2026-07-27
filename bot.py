@@ -2704,56 +2704,6 @@ async def repsms(message: Message):
         f"✍ Напишите ответ пользователю по обращению #{report_id}"
     )
 
-@dp.message(F.text)
-async def send_rep_answer(message: Message):
-
-    # Не обрабатываем команды
-    if message.text.startswith("/"):
-        return
-
-    if message.from_user.id not in waiting_rep_answer:
-        return
-
-    report_id = waiting_rep_answer.pop(message.from_user.id)
-
-
-    report_id = waiting_rep_answer.pop(message.from_user.id)
-
-    report = execute(
-        """
-        SELECT user_id
-        FROM reports
-        WHERE id=%s
-        """,
-        (report_id,)
-    ).fetchone()
-
-    if not report:
-        await message.answer("Обращение не найдено.")
-        return
-
-    user_id = report[0]
-
-    execute(
-        """
-        INSERT INTO report_messages
-        (report_id, sender, text)
-        VALUES(%s,%s,%s)
-        """,
-        (
-            report_id,
-            "editor",
-            message.text
-        )
-    )
-
-    await bot.send_message(
-        user_id,
-        f"📨 Ответ редактора\n\n{message.text}"
-    )
-
-    await message.answer("✅ Ответ отправлен.")
-
 @dp.message(Command("closerep"))
 async def closerep(message: Message):
 
@@ -2899,6 +2849,56 @@ async def report_messages(message: Message):
             file_type
         )
     )
+
+@dp.message(F.text)
+async def send_rep_answer(message: Message):
+
+    # Не обрабатываем команды
+    if message.text.startswith("/"):
+        return
+
+    if message.from_user.id not in waiting_rep_answer:
+        return
+
+    report_id = waiting_rep_answer.pop(message.from_user.id)
+
+
+    report_id = waiting_rep_answer.pop(message.from_user.id)
+
+    report = execute(
+        """
+        SELECT user_id
+        FROM reports
+        WHERE id=%s
+        """,
+        (report_id,)
+    ).fetchone()
+
+    if not report:
+        await message.answer("Обращение не найдено.")
+        return
+
+    user_id = report[0]
+
+    execute(
+        """
+        INSERT INTO report_messages
+        (report_id, sender, text)
+        VALUES(%s,%s,%s)
+        """,
+        (
+            report_id,
+            "editor",
+            message.text
+        )
+    )
+
+    await bot.send_message(
+        user_id,
+        f"📨 Ответ редактора\n\n{message.text}"
+    )
+
+    await message.answer("✅ Ответ отправлен.")
 
 @dp.message()
 async def save_zbt(message: Message):
