@@ -2620,16 +2620,9 @@ async def reportinfo(message: Message):
 
     user_id, username, created = report
 
-    await message.answer(
-        f"📋 Обращение #{report_id}\n\n"
-        f"👤 @{username if username else 'нет'}\n"
-        f"🆔 {user_id}\n"
-        f"📅 {created.strftime('%d.%m.%Y %H:%M')}"
-    )
-
     rows = execute(
         """
-        SELECT sender,text,file_id,file_type
+        SELECT sender, text, file_id, file_type
         FROM report_messages
         WHERE report_id=%s
         ORDER BY id
@@ -2637,34 +2630,56 @@ async def reportinfo(message: Message):
         (report_id,)
     ).fetchall()
 
+    history = ""
+
     for sender, text, file_id, file_type in rows:
 
         prefix = "👤 Пользователь" if sender == "user" else "👮 Редактор"
 
         if text:
-            await message.answer(
-                f"{prefix}\n\n{text}"
-            )
+            history += f"{prefix}\n{text}\n\n"
 
         if file_id:
-
             if file_type == "photo":
-                await message.answer_photo(
-                    file_id,
-                    caption=prefix
-                )
+                history += f"{prefix}\n📷 Фото\n\n"
 
             elif file_type == "video":
-                await message.answer_video(
-                    file_id,
-                    caption=prefix
-                )
+                history += f"{prefix}\n🎥 Видео\n\n"
 
             elif file_type == "document":
-                await message.answer_document(
-                    file_id,
-                    caption=prefix
-                )
+                history += f"{prefix}\n📄 Документ\n\n"
+
+    await message.answer(
+        f"""
+📋 <b>Обращение #{report_id}</b>
+
+👤 @{username if username else 'нет'}
+🆔 <code>{user_id}</code>
+📅 {created.strftime('%d.%m.%Y %H:%M')}
+
+────────────
+
+{history if history else 'Сообщений нет.'}
+""",
+        parse_mode="HTML"
+    )
+
+    # Отправляем сами файлы после истории
+    for sender, text, file_id, file_type in rows:
+
+        prefix = "👤 Пользователь" if sender == "user" else "👮 Редактор"
+
+        if not file_id:
+            continue
+
+        if file_type == "photo":
+            await message.answer_photo(file_id, caption=prefix)
+
+        elif file_type == "video":
+            await message.answer_video(file_id, caption=prefix)
+
+        elif file_type == "document":
+            await message.answer_document(file_id, caption=prefix)
 
 @dp.message(Command("repsms"))
 async def repsms(message: Message):
@@ -2681,7 +2696,8 @@ async def repsms(message: Message):
         )
         return
 
-    report_id = int(args[1])
+    user_id = report[0]
+    waiting_rep_answer[message.from_user.id] = (report_id, user_id)
 
     report = execute(
         """
@@ -2858,10 +2874,8 @@ async def send_rep_answer(message: Message):
     if message.from_user.id not in waiting_rep_answer:
         return
 
-    report_id = waiting_rep_answer.pop(message.from_user.id)
+    report_id, user_id = waiting_rep_answer.pop(message.from_user.id)
 
-
-    report_id = waiting_rep_answer.pop(message.from_user.id)
 
     report = execute(
         """
