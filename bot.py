@@ -2763,8 +2763,15 @@ async def repsms(message: Message):
 @dp.message(F.text)
 async def send_rep_answer(message: Message):
 
+    # Не обрабатываем команды
+    if message.text.startswith("/"):
+        return
+
     if message.from_user.id not in waiting_rep_answer:
         return
+
+    report_id = waiting_rep_answer.pop(message.from_user.id)
+
 
     report_id = waiting_rep_answer.pop(message.from_user.id)
 
@@ -2845,8 +2852,6 @@ async def closerep(message: Message):
         (report_id,)
     )
 
-    db.commit()
-
     await bot.send_message(
         user_id,
         f"✅ Ваше обращение #{report_id} было закрыто редактором."
@@ -2890,8 +2895,6 @@ async def delrep(message: Message):
         "DELETE FROM reports WHERE id=%s",
         (report_id,)
     )
-
-    db.commit()
 
     await message.answer(
         f"🗑 Обращение #{report_id} удалено."
