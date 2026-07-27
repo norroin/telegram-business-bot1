@@ -37,6 +37,10 @@ waiting_upload = {}
 
 waiting_reports = {}
 
+active_reports = {}
+
+waiting_rep_answer = {}
+
 TOKEN = os.getenv("TOKEN")
 ADMINS = [5639087435]
 
@@ -2534,15 +2538,194 @@ async def report(message: Message):
 
     report_id = cur.fetchone()[0]
 
-    db.commit()
-
-    waiting_reports[message.from_user.id] = report_id
+    active_reports[message.from_user.id] = report_id
 
     await message.answer(
         f"📝 Обращение #{report_id} создано.\n\n"
         "Теперь отправляйте текст, фото, видео или документы.\n\n"
         "Когда закончите — используйте /endreport"
     )
+
+@dp.message(Command("endreport"))
+async def end_report(message: Message):
+
+    if message.from_user.id not in active_reports:
+        await message.answer("У вас нет активного обращения.")
+        return
+
+    report_id = active_reports.pop(message.from_user.id)
+
+    await message.answer(
+        f"✅ Обращение #{report_id} отправлено редакторам."
+    )
+
+@dp.message(F.text | F.photo | F.video | F.document)
+async def report_messages(message: Message):
+
+    if message.from_user.id not in active_reports:
+
+    report = execute(
+        """
+        SELECT id
+        FROM reports
+        WHERE user_id=%s
+        AND status='open'
+        ORDER BY id DESC
+        LIMIT 1
+        """,
+        (message.from_user.id,)
+    ).fetchone()
+
+    if not report:
+        return
+
+    report_id = report[0]
+
+else:
+
+    report_id = active_reports[message.from_user.id]
+
+    report_id = active_reports[message.from_user.id]
+
+    text = message.text if message.text else None
+    file_id = None
+    file_type = None
+
+    if message.photo:
+        file_id = message.photo[-1].file_id
+        file_type = "photo"
+
+    elif message.video:
+        file_id = message.video.file_id
+        file_type = "video"
+
+    elif message.document:
+        file_id = message.document.file_id
+        file_type = "document"
+
+    execute(
+        """
+        INSERT INTO report_messages
+        (report_id, sender, text, file_id, file_type)
+        VALUES(%s,%s,%s,%s,%s)
+        """,
+        (
+            report_id,
+            "user",
+            text,
+            file_id,
+            file_type
+        )
+    )
+
+@dp.message(Command("reports"))
+async def reports(message: Message):
+
+    if message.from_user.id not in ADMINS and not is_creator(message.from_user.id):
+        return
+
+    rows = execute(
+        """
+        SELECT id, user_id, username, created_at
+        FROM reports
+        WHERE status='open'
+        ORDER BY id
+        """
+    ).fetchall()
+
+    if not rows:
+        await message.answer("📭 Активных обращений нет.")
+        return
+
+    text = "📋 Активные обращения\n\n"
+
+    for rep_id, user_id, username, created_at in rows:
+
+        username = f"@{username}" if username else "нет"
+
+        text += (
+            f"#{rep_id}\n"
+            f"👤 {username}\n"
+            f"🆔 {user_id}\n"
+            f"📅 {created_at.strftime('%d.%m.%Y %H:%M')}\n\n"
+        )
+
+    await message.answer(text)
+
+@dp.message(Command("reportinfo"))
+async def reportinfo(message: Message):
+
+    if message.from_user.id not in ADMINS and not is_creator(message.from_user.id):
+        return
+
+    args = message.text.split()
+
+    if len(args) != 2:
+        await message.answer("Использование:\n/reportinfo ID")
+        return
+
+    report_id = int(args[1])
+
+    report = execute(
+        """
+        SELECT user_id, username, created_at
+        FROM reports
+        WHERE id=%s
+        """,
+        (report_id,)
+    ).fetchone()
+
+    if not report:
+        await message.answer("Обращение не найдено.")
+        return
+
+    user_id, username, created = report
+
+    await message.answer(
+        f"📋 Обращение #{report_id}\n\n"
+        f"👤 @{username if username else 'нет'}\n"
+        f"🆔 {user_id}\n"
+        f"📅 {created.strftime('%d.%m.%Y %H:%M')}"
+    )
+
+    rows = execute(
+        """
+        SELECT sender,text,file_id,file_type
+        FROM report_messages
+        WHERE report_id=%s
+        ORDER BY id
+        """,
+        (report_id,)
+    ).fetchall()
+
+    for sender, text, file_id, file_type in rows:
+
+        prefix = "👤 Пользователь" if sender == "user" else "👮 Редактор"
+
+        if text:
+            await message.answer(
+                f"{prefix}\n\n{text}"
+            )
+
+        if file_id:
+
+            if file_type == "photo":
+                await message.answer_photo(
+                    file_id,
+                    caption=prefix
+                )
+
+            elif file_type == "video":
+                await message.answer_video(
+                    file_id,
+                    caption=prefix
+                )
+
+            elif file_type == "document":
+                await message.answer_document(
+                    file_id,
+                    caption=prefix
+                )
 
 @dp.message()
 async def save_zbt(message: Message):
@@ -2567,6 +2750,84 @@ async def save_zbt(message: Message):
 
     await message.answer("✅ Пост успешно сохранён.")
 
+@dp.message(Command("repsms"))
+async def repsms(message: Message):
+
+    if message.from_user.id not in ADMINS and not is_creator(message.from_user.id):
+        return
+
+    args = message.text.split()
+
+    if len(args) != 2:
+        await message.answer(
+            "Использование:\n"
+            "/repsms ID"
+        )
+        return
+
+    report_id = int(args[1])
+
+    report = execute(
+        """
+        SELECT user_id
+        FROM reports
+        WHERE id=%s AND status='open'
+        """,
+        (report_id,)
+    ).fetchone()
+
+    if not report:
+        await message.answer("Обращение не найдено.")
+        return
+
+    waiting_rep_answer[message.from_user.id] = report_id
+
+    await message.answer(
+        f"✍ Напишите ответ пользователю по обращению #{report_id}"
+    )
+
+@dp.message(F.text)
+async def send_rep_answer(message: Message):
+
+    if message.from_user.id not in waiting_rep_answer:
+        return
+
+    report_id = waiting_rep_answer.pop(message.from_user.id)
+
+    report = execute(
+        """
+        SELECT user_id
+        FROM reports
+        WHERE id=%s
+        """,
+        (report_id,)
+    ).fetchone()
+
+    if not report:
+        await message.answer("Обращение не найдено.")
+        return
+
+    user_id = report[0]
+
+    execute(
+        """
+        INSERT INTO report_messages
+        (report_id, sender, text)
+        VALUES(%s,%s,%s)
+        """,
+        (
+            report_id,
+            "editor",
+            message.text
+        )
+    )
+
+    await bot.send_message(
+        user_id,
+        f"📨 Ответ редактора\n\n{message.text}"
+    )
+
+    await message.answer("✅ Ответ отправлен.")
 
 @dp.message()
 async def save_chat(message: Message):
