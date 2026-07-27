@@ -2564,28 +2564,25 @@ async def report_messages(message: Message):
 
     if message.from_user.id not in active_reports:
 
-    report = execute(
-        """
-        SELECT id
-        FROM reports
-        WHERE user_id=%s
-        AND status='open'
-        ORDER BY id DESC
-        LIMIT 1
-        """,
-        (message.from_user.id,)
-    ).fetchone()
+        report = execute(
+            """
+            SELECT id
+            FROM reports
+            WHERE user_id=%s
+            AND status='open'
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (message.from_user.id,)
+        ).fetchone()
 
-    if not report:
-        return
+        if not report:
+            return
 
-    report_id = report[0]
+        report_id = report[0]
 
-else:
-
-    report_id = active_reports[message.from_user.id]
-
-    report_id = active_reports[message.from_user.id]
+    else:
+        report_id = active_reports[message.from_user.id]
 
     text = message.text if message.text else None
     file_id = None
@@ -2727,29 +2724,6 @@ async def reportinfo(message: Message):
                     caption=prefix
                 )
 
-@dp.message()
-async def save_zbt(message: Message):
-
-    if message.from_user.id not in waiting_zbt:
-        return
-
-    waiting_zbt.remove(message.from_user.id)
-
-    execute(
-        """
-        INSERT INTO zbt_posts(chat_id, message_id)
-        VALUES(%s, %s)
-        """,
-        (
-            message.chat.id,
-            message.message_id
-        )
-    )
-
-
-
-    await message.answer("✅ Пост успешно сохранён.")
-
 @dp.message(Command("repsms"))
 async def repsms(message: Message):
 
@@ -2828,6 +2802,123 @@ async def send_rep_answer(message: Message):
     )
 
     await message.answer("✅ Ответ отправлен.")
+
+@dp.message(Command("closerep"))
+async def closerep(message: Message):
+
+    if message.from_user.id not in ADMINS and not is_creator(message.from_user.id):
+        return
+
+    args = message.text.split()
+
+    if len(args) != 2:
+        await message.answer(
+            "Использование:\n"
+            "/closerep ID"
+        )
+        return
+
+    report_id = int(args[1])
+
+    report = execute(
+        """
+        SELECT user_id
+        FROM reports
+        WHERE id=%s
+        """,
+        (report_id,)
+    ).fetchone()
+
+    if not report:
+        await message.answer("Обращение не найдено.")
+        return
+
+    user_id = report[0]
+
+    execute(
+        """
+        UPDATE reports
+        SET status='closed',
+            closed_at=NOW()
+        WHERE id=%s
+        """,
+        (report_id,)
+    )
+
+    db.commit()
+
+    await bot.send_message(
+        user_id,
+        f"✅ Ваше обращение #{report_id} было закрыто редактором."
+    )
+
+    await message.answer(
+        f"✅ Обращение #{report_id} закрыто."
+    )
+
+@dp.message(Command("delrep"))
+async def delrep(message: Message):
+
+    if message.from_user.id not in ADMINS and not is_creator(message.from_user.id):
+        return
+
+    args = message.text.split()
+
+    if len(args) != 2:
+        await message.answer(
+            "Использование:\n"
+            "/delrep ID"
+        )
+        return
+
+    report_id = int(args[1])
+
+    report = execute(
+        """
+        SELECT id
+        FROM reports
+        WHERE id=%s
+        """,
+        (report_id,)
+    ).fetchone()
+
+    if not report:
+        await message.answer("Обращение не найдено.")
+        return
+
+    execute(
+        "DELETE FROM reports WHERE id=%s",
+        (report_id,)
+    )
+
+    db.commit()
+
+    await message.answer(
+        f"🗑 Обращение #{report_id} удалено."
+    )
+
+@dp.message()
+async def save_zbt(message: Message):
+
+    if message.from_user.id not in waiting_zbt:
+        return
+
+    waiting_zbt.remove(message.from_user.id)
+
+    execute(
+        """
+        INSERT INTO zbt_posts(chat_id, message_id)
+        VALUES(%s, %s)
+        """,
+        (
+            message.chat.id,
+            message.message_id
+        )
+    )
+
+
+
+    await message.answer("✅ Пост успешно сохранён.")
 
 @dp.message()
 async def save_chat(message: Message):
