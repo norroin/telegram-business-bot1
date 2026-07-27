@@ -2559,62 +2559,6 @@ async def end_report(message: Message):
         f"✅ Обращение #{report_id} отправлено редакторам."
     )
 
-@dp.message(F.text | F.photo | F.video | F.document)
-async def report_messages(message: Message):
-
-    if message.from_user.id not in active_reports:
-
-        report = execute(
-            """
-            SELECT id
-            FROM reports
-            WHERE user_id=%s
-            AND status='open'
-            ORDER BY id DESC
-            LIMIT 1
-            """,
-            (message.from_user.id,)
-        ).fetchone()
-
-        if not report:
-            return
-
-        report_id = report[0]
-
-    else:
-        report_id = active_reports[message.from_user.id]
-
-    text = message.text if message.text else None
-    file_id = None
-    file_type = None
-
-    if message.photo:
-        file_id = message.photo[-1].file_id
-        file_type = "photo"
-
-    elif message.video:
-        file_id = message.video.file_id
-        file_type = "video"
-
-    elif message.document:
-        file_id = message.document.file_id
-        file_type = "document"
-
-    execute(
-        """
-        INSERT INTO report_messages
-        (report_id, sender, text, file_id, file_type)
-        VALUES(%s,%s,%s,%s,%s)
-        """,
-        (
-            report_id,
-            "user",
-            text,
-            file_id,
-            file_type
-        )
-    )
-
 @dp.message(Command("reports"))
 async def reports(message: Message):
 
@@ -2898,6 +2842,62 @@ async def delrep(message: Message):
 
     await message.answer(
         f"🗑 Обращение #{report_id} удалено."
+    )
+
+@dp.message(F.text | F.photo | F.video | F.document)
+async def report_messages(message: Message):
+
+    if message.from_user.id not in active_reports:
+
+        report = execute(
+            """
+            SELECT id
+            FROM reports
+            WHERE user_id=%s
+            AND status='open'
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (message.from_user.id,)
+        ).fetchone()
+
+        if not report:
+            return
+
+        report_id = report[0]
+
+    else:
+        report_id = active_reports[message.from_user.id]
+
+    text = message.text if message.text else None
+    file_id = None
+    file_type = None
+
+    if message.photo:
+        file_id = message.photo[-1].file_id
+        file_type = "photo"
+
+    elif message.video:
+        file_id = message.video.file_id
+        file_type = "video"
+
+    elif message.document:
+        file_id = message.document.file_id
+        file_type = "document"
+
+    execute(
+        """
+        INSERT INTO report_messages
+        (report_id, sender, text, file_id, file_type)
+        VALUES(%s,%s,%s,%s,%s)
+        """,
+        (
+            report_id,
+            "user",
+            text,
+            file_id,
+            file_type
+        )
     )
 
 @dp.message()
