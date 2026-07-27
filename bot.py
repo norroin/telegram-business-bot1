@@ -31,6 +31,10 @@ from utils import (
 
 from middlewares import MainMiddleware
 
+from datetime import datetime, timedelta
+
+waiting_upload = {}
+
 TOKEN = os.getenv("TOKEN")
 ADMINS = [5639087435]
 
@@ -2459,15 +2463,27 @@ async def delkaz(message: Message):
 
 @dp.message(Command("upload"))
 async def upload(message: Message):
-
-    UPLOAD_WAIT.add(message.from_user.id)
+    waiting_upload[message.from_user.id] = datetime.now()
 
     await message.answer(
-        "📎 Отправьте фото или видео."
+        "📤 Отправьте фото или видео в течение 5 минут.\n"
+        "После этого я загружу файл и пришлю ссылку."
     )
 
 @dp.message(F.photo | F.video)
 async def upload_file(message: Message):
+
+    start_time = waiting_upload.get(message.from_user.id)
+
+    if not start_time:
+        return
+
+    if datetime.now() - start_time > timedelta(minutes=5):
+        waiting_upload.pop(message.from_user.id, None)
+        await message.answer("⌛ Время ожидания истекло. Напишите /upload ещё раз.")
+        return
+
+    waiting_upload.pop(message.from_user.id, None)
 
     if message.from_user.id not in UPLOAD_WAIT:
         return
