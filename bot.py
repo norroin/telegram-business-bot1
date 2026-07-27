@@ -2522,6 +2522,12 @@ async def upload_file(message: Message):
 @dp.message(Command("report"))
 async def report(message: Message):
 
+    if message.chat.type != "private":
+        await message.answer(
+            "❌ Команда доступна только в личных сообщениях с ботом."
+    )
+    return
+
     execute(
         """
         INSERT INTO reports(user_id, username)
