@@ -2811,7 +2811,7 @@ async def delrep(message: Message):
 
 @dp.message(F.text | F.photo | F.video | F.document)
 async def report_messages(message: Message):
-
+    print("REPORT_MESSAGES")
     if message.from_user.id not in active_reports:
 
         report = execute(
@@ -2867,6 +2867,7 @@ async def report_messages(message: Message):
 
 @dp.message(F.text)
 async def send_rep_answer(message: Message):
+    print("SEND_REP_ANSWER")
 
     # Не обрабатываем команды
     if message.text.startswith("/"):
