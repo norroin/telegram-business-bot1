@@ -35,6 +35,8 @@ from datetime import datetime, timedelta
 
 waiting_upload = {}
 
+waiting_reports = {}
+
 TOKEN = os.getenv("TOKEN")
 ADMINS = [5639087435]
 
@@ -2513,6 +2515,33 @@ async def upload_file(message: Message):
 
     await message.answer(
         f"✅ Ссылка:\n{result['secure_url']}"
+    )
+
+@dp.message(Command("report"))
+async def report(message: Message):
+
+    execute(
+        """
+        INSERT INTO reports(user_id, username)
+        VALUES(%s,%s)
+        RETURNING id
+        """,
+        (
+            message.from_user.id,
+            message.from_user.username
+        )
+    )
+
+    report_id = cur.fetchone()[0]
+
+    db.commit()
+
+    waiting_reports[message.from_user.id] = report_id
+
+    await message.answer(
+        f"📝 Обращение #{report_id} создано.\n\n"
+        "Теперь отправляйте текст, фото, видео или документы.\n\n"
+        "Когда закончите — используйте /endreport"
     )
 
 @dp.message()

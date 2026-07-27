@@ -95,6 +95,29 @@ CREATE TABLE IF NOT EXISTS casino(
 )
 """,
 
+"""
+CREATE TABLE IF NOT EXISTS reports(
+    id SERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    username TEXT,
+    status TEXT DEFAULT 'open',
+    created_at TIMESTAMP DEFAULT NOW(),
+    closed_at TIMESTAMP
+)
+"""
+
+"""
+CREATE TABLE IF NOT EXISTS report_messages(
+    id SERIAL PRIMARY KEY,
+    report_id INTEGER REFERENCES reports(id) ON DELETE CASCADE,
+    sender TEXT,
+    text TEXT,
+    file_id TEXT,
+    file_type TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+)
+"""
+
 
 ]
 
