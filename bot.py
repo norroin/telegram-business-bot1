@@ -1284,48 +1284,28 @@ async def checkrole(message: Message):
 @dp.callback_query(F.data == "biz")
 async def biz(callback: CallbackQuery):
 
-    message = callback.message
-
-    if not await check_sub(bot, CHANNEL_ID, message):
-        await require_sub(message)
+    if not await check_sub(bot, CHANNEL_ID, callback.message):
+        await require_sub(callback.message)
         return
+
+    await register_user(bot, OWNER_ID, callback.message)
 
     await callback.answer()
 
-    await bizlist(message)
-
-    rows = execute(
-        "SELECT id, name FROM businesses ORDER BY id"
-    ).fetchall()
-
-    if not rows:
-        await callback.message.answer(
-            "Список бизнесов пуст."
-        )
-        return
-
-    text = "📋 Список бизнесов\n\n"
-
-    for business_id, name in rows:
-        text += f"{business_id} - {name}\n"
-
-    await callback.message.answer(text)
-
+    await bizlist(callback.message)
 
 @dp.callback_query(F.data == "categories")
 async def categories_btn(callback: CallbackQuery):
 
-    message = callback.message
-
-    if not await check_sub(bot, CHANNEL_ID, message):
-        await require_sub(message)
+    if not await check_sub(bot, CHANNEL_ID, callback.message):
+        await require_sub(callback.message)
         return
 
-    await register_user(message)
+    await register_user(bot, OWNER_ID, callback.message)
 
     await callback.answer()
 
-    await categories(message)
+    await categories(callback.message)
 
 @dp.callback_query(F.data == "help")
 async def help_btn(callback: CallbackQuery):
