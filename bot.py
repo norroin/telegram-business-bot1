@@ -97,7 +97,7 @@ from aiogram.types import (
 async def start(message: Message):
 
     if not await check_sub(bot, CHANNEL_ID, message):
-        await require_sub(message)
+        await register_user(message)
         return
 
     await register_user(bot, OWNER_ID, message)
@@ -1284,13 +1284,15 @@ async def checkrole(message: Message):
 @dp.callback_query(F.data == "biz")
 async def biz(callback: CallbackQuery):
 
-    if not await check_sub(callback.message):
-        await require_sub(callback.message)
+    message = callback.message
+
+    if not await check_sub(bot, CHANNEL_ID, message):
+        await require_sub(message)
         return
 
     await callback.answer()
 
-    await bizlist(callback.message)
+    await bizlist(message)
 
     rows = execute(
         "SELECT id, name FROM businesses ORDER BY id"
@@ -1313,16 +1315,17 @@ async def biz(callback: CallbackQuery):
 @dp.callback_query(F.data == "categories")
 async def categories_btn(callback: CallbackQuery):
 
+    message = callback.message
+
     if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
 
-    await register_user(bot, OWNER_ID, message)
+    await register_user(message)
 
     await callback.answer()
 
-    await categories(callback.message)
-
+    await categories(message)
 
 @dp.callback_query(F.data == "help")
 async def help_btn(callback: CallbackQuery):
