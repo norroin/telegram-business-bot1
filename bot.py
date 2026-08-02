@@ -2052,6 +2052,12 @@ async def addbs(message: Message):
         (location, end_time)
     )
 
+    row = execute(
+        "SELECT location, end_time FROM family_battle LIMIT 1"
+    ).fetchone()
+
+    await message.answer(f"DEBUG: {row}")
+
     await message.answer("✅ Активная БС добавлена.")
 
 @dp.message(Command("bs"))
