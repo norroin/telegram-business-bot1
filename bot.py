@@ -2018,7 +2018,6 @@ async def addbs(message: Message):
 
     await register_user(bot, OWNER_ID, message)
 
-
     if get_role(message.from_user.id) < 1:
         return
 
@@ -2031,8 +2030,14 @@ async def addbs(message: Message):
         )
         return
 
-    end = args[1]
+    end = args[1].replace(";", ":").replace(".", ":")
     location = args[2]
+
+    try:
+        datetime.strptime(end, "%H:%M")
+    except ValueError:
+        await message.answer("❌ Неверный формат времени.\nПример: 17:00")
+        return
 
     today = datetime.now().strftime("%Y-%m-%d")
     end_time = f"{today} {end}:00"
@@ -2047,11 +2052,7 @@ async def addbs(message: Message):
         (location, end_time)
     )
 
-    
-
     await message.answer("✅ Активная БС добавлена.")
-
-from datetime import datetime
 
 @dp.message(Command("bs"))
 async def bs(message: Message):
@@ -2062,9 +2063,12 @@ async def bs(message: Message):
 
     await register_user(bot, OWNER_ID, message)
 
-
     row = execute(
-        "SELECT location, end_time FROM family_battle LIMIT 1"
+        """
+        SELECT location, end_time
+        FROM family_battle
+        LIMIT 1
+        """
     ).fetchone()
 
     if not row:
@@ -2074,21 +2078,18 @@ async def bs(message: Message):
     location, end_time = row
 
     if isinstance(end_time, str):
-        end = datetime.fromisoformat(end_time)
-    else:
-        end = end_time
+        end_time = datetime.fromisoformat(end_time)
 
-    if datetime.now() >= end:
+    if datetime.now() >= end_time:
         execute("DELETE FROM family_battle")
-
-
         await message.answer("Активных битв семей нет.")
         return
 
     await message.answer(
-        f"⚔ Активная битва семей\n\n"
-        f"📍 Местоположение: /gps {location}\n"
-        f"⏰ До окончания: {end.strftime('%H:%M')}"
+        f"⚔ <b>Активная битва семей</b>\n\n"
+        f"📍 Местоположение: <code>/gps {location}</code>\n"
+        f"🕒 Время битвы: <b>{end_time.strftime('%H:%M')}</b>",
+        parse_mode="HTML"
     )
 
 @dp.message(Command("delbs"))
