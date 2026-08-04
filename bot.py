@@ -1862,42 +1862,50 @@ async def rep(message: Message):
 @dp.message(Command("topadmin"))
 async def topadmin(message: Message):
 
-    if not await check_sub(bot, CHANNEL_ID, message):
-        await require_sub(message)
+    if get_role(message.from_user.id) < 1:
         return
 
-    await register_user(bot, OWNER_ID, message)
-
-
-    rows = execute("""
+    best = execute("""
         SELECT nickname, position, reputation
         FROM admins
-        ORDER BY reputation DESC, nickname
-        LIMIT 10
+        ORDER BY reputation DESC
+        LIMIT 3
     """).fetchall()
 
-    if not rows:
-        await message.answer("Список администрации пуст.")
-        return
+    worst = execute("""
+        SELECT nickname, position, reputation
+        FROM admins
+        ORDER BY reputation ASC
+        LIMIT 3
+    """).fetchall()
 
-    medals = {
-        1: "🥇",
-        2: "🥈",
-        3: "🥉"
-    }
+    text = "🏆 Топ администраторов\n\n"
 
-    text = "🏆 Топ по репутации администрации Брянска\n\n"
+    text += "📈 Топ лучших:\n"
 
-    for i, (nickname, position, reputation) in enumerate(rows, start=1):
+    medals = ["🥇", "🥈", "🥉"]
 
-        place = medals.get(i, f"🔹 {i} место")
+    if best:
+        for i, (nick, pos, rep) in enumerate(best):
+            text += (
+                f"{medals[i]} {nick}\n"
+                f"💼 {pos}\n"
+                f"⭐ {rep}\n\n"
+            )
+    else:
+        text += "Нет данных.\n\n"
 
-        text += (
-            f"{place}\n"
-            f"👤 {nickname}\n"
-            f"💼 {position}\n"
-            f"⭐ Репутация: {reputation}\n\n"
-        )
+    text += "📉 Топ худших:\n"
+
+    if worst:
+        for i, (nick, pos, rep) in enumerate(worst):
+            text += (
+                f"{medals[i]} {nick}\n"
+                f"💼 {pos}\n"
+                f"⭐ {rep}\n\n"
+            )
+    else:
+        text += "Нет данных."
 
     await message.answer(text)
 
