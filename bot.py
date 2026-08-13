@@ -554,7 +554,6 @@ async def set_role(message: Message):
 
     await register_user(bot, OWNER_ID, message)
 
-
     if message.from_user.id not in ADMINS:
         return
 
@@ -562,22 +561,36 @@ async def set_role(message: Message):
 
     if len(args) != 3:
         await message.answer(
-            "Пример:\n/setrole 123456789 1"
+            "Пример:\n"
+            "/setrole 123456789 1\n\n"
+            "Роли:\n"
+            "0 — Пользователь\n"
+            "1 — Редактор\n"
+            "2 — Создатель"
         )
         return
 
-    user_id = int(args[1])
-    role = int(args[2])
+    try:
+        user_id = int(args[1])
+        role = int(args[2])
+    except ValueError:
+        await message.answer(
+            "❌ ID пользователя и роль должны быть числами.\n\n"
+            "Пример:\n"
+            "/setrole 123456789 1"
+        )
+        return
 
     if role not in [0, 1, 2]:
         await message.answer(
-            "0 - Пользователь\n"
-            "1 - Редактор\n"
-            "2 - Создатель"
+            "❌ Неверная роль.\n\n"
+            "0 — Пользователь\n"
+            "1 — Редактор\n"
+            "2 — Создатель"
         )
         return
 
-        execute(
+    execute(
         """
         INSERT INTO roles (user_id, role)
         VALUES (%s, %s)
@@ -587,12 +600,10 @@ async def set_role(message: Message):
         (user_id, role)
     )
 
-        
-
     await message.answer(
-        f"Роль {role} выдана пользователю {user_id}"
+        f"✅ Роль {role} выдана пользователю {user_id}."
     )
-
+    
 @dp.message(Command("cbiz"))
 async def cbiz(message: Message):
 
