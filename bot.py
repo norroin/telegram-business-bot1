@@ -603,7 +603,7 @@ async def set_role(message: Message):
     await message.answer(
         f"✅ Роль {role} выдана пользователю {user_id}."
     )
-    
+
 @dp.message(Command("cbiz"))
 async def cbiz(message: Message):
 
@@ -2335,7 +2335,7 @@ async def addo(message: Message):
 
     await register_user(bot, OWNER_ID, message)
 
-    if get_role(message.from_user.id) < 2:
+    if get_role(message.from_user.id) < 1:
         await message.answer("Недостаточно прав.")
         return
 
