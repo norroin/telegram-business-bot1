@@ -2559,7 +2559,7 @@ async def report(message: Message):
         "Теперь отправляйте текст, фото, видео или документы.\n\n"
         "Когда закончите — используйте /endreport"
     )
-    
+
 @dp.message(Command("endreport"))
 async def end_report(message: Message):
 
@@ -2616,10 +2616,16 @@ async def reportinfo(message: Message):
     args = message.text.split()
 
     if len(args) != 2:
-        await message.answer("Использование:\n/reportinfo ID")
+        await message.answer(
+            "Использование:\n/reportinfo ID"
+        )
         return
 
-    report_id = int(args[1])
+    try:
+        report_id = int(args[1])
+    except ValueError:
+        await message.answer("ID обращения должен быть числом.")
+        return
 
     report = execute(
         """
@@ -2650,20 +2656,44 @@ async def reportinfo(message: Message):
 
     for sender, text, file_id, file_type in rows:
 
-        prefix = "👤 Пользователь" if sender == "user" else "👮 Редактор"
+        prefix = (
+            "👤 Пользователь"
+            if sender == "user"
+            else "👮 Редактор"
+        )
 
+        # Текст
         if text:
-            history += f"{prefix}\n{text}\n\n"
 
+            # Не показываем команды в истории
+            if text.startswith("/"):
+                continue
+
+            history += (
+                f"{prefix}\n"
+                f"{text}\n\n"
+            )
+
+        # Файл
         if file_id:
+
             if file_type == "photo":
-                history += f"{prefix}\n📷 Фото\n\n"
+                history += (
+                    f"{prefix}\n"
+                    f"📷 Фото\n\n"
+                )
 
             elif file_type == "video":
-                history += f"{prefix}\n🎥 Видео\n\n"
+                history += (
+                    f"{prefix}\n"
+                    f"🎥 Видео\n\n"
+                )
 
             elif file_type == "document":
-                history += f"{prefix}\n📄 Документ\n\n"
+                history += (
+                    f"{prefix}\n"
+                    f"📄 Документ\n\n"
+                )
 
     await message.answer(
         f"""
@@ -2680,22 +2710,39 @@ async def reportinfo(message: Message):
         parse_mode="HTML"
     )
 
-    # Отправляем сами файлы после истории
+    # Отправляем файлы отдельно
     for sender, text, file_id, file_type in rows:
-
-        prefix = "👤 Пользователь" if sender == "user" else "👮 Редактор"
 
         if not file_id:
             continue
 
+        # Если текст был командой — сам файл всё равно показываем
+        prefix = (
+            "👤 Пользователь"
+            if sender == "user"
+            else "👮 Редактор"
+        )
+
         if file_type == "photo":
-            await message.answer_photo(file_id, caption=prefix)
+
+            await message.answer_photo(
+                file_id,
+                caption=prefix
+            )
 
         elif file_type == "video":
-            await message.answer_video(file_id, caption=prefix)
+
+            await message.answer_video(
+                file_id,
+                caption=prefix
+            )
 
         elif file_type == "document":
-            await message.answer_document(file_id, caption=prefix)
+
+            await message.answer_document(
+                file_id,
+                caption=prefix
+            )
 
 @dp.message(Command("repsms"))
 async def repsms(message: Message):
@@ -2859,6 +2906,16 @@ async def send_rep_answer(message: Message):
 
 @dp.message(F.text | F.photo | F.video | F.document)
 async def report_messages(message: Message):
+
+    # Если это команда — не сохраняем её в обращение
+    if message.text and message.text.startswith("/"):
+        if message.from_user.id in active_reports:
+            await message.answer(
+                "❌ Сначала завершите обращение командой /endreport."
+            )
+        return
+
+    # Ищем активное обращение
     if message.from_user.id not in active_reports:
 
         report = execute(
@@ -2882,6 +2939,7 @@ async def report_messages(message: Message):
         report_id = active_reports[message.from_user.id]
 
     text = message.text if message.text else None
+
     file_id = None
     file_type = None
 
@@ -2911,7 +2969,6 @@ async def report_messages(message: Message):
             file_type
         )
     )
-
 
 @dp.message()
 async def save_zbt(message: Message):
