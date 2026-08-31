@@ -156,7 +156,7 @@ async def start(message: Message):
         reply_markup=kb,
         parse_mode="Markdown"
     )
-    
+
 @dp.message(Command("business"))
 async def business(message: Message):
     
@@ -2422,7 +2422,8 @@ async def set_commands(bot):
         BotCommand(command="del", description="Удалить пост о збт"),
         BotCommand(command="repadm", description="Изменить репутацию "),
         BotCommand(command="casino", description="Информация о казино"),
-        BotCommand(command="carlist", description="Айди автомобилей ")
+        BotCommand(command="carlist", description="Айди автомобилей "),
+        BotCommand(command="info", description="Информация для новичков ")
     ]
 
     await bot.set_my_commands(commands)
