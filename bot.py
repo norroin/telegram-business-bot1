@@ -503,19 +503,19 @@ async def importcars(message: Message):
         # Рабочий класс
         # ----------------------------------------------------
 
-        existing = execute(
-            """
-            SELECT car_id
-            FROM cars
-            WHERE game_id=%s
-            AND category=%s
-            LIMIT 1
-            """,
-            (
-                game_id,
-                current_category
-            )
-        ).fetchone()
+    existing = execute(
+        """
+        SELECT game_id
+        FROM cars
+        WHERE game_id=%s
+        AND category=%s
+        LIMIT 1
+        """,
+        (
+            game_id,
+            current_category
+        )
+    ).fetchone()
 
         # ----------------------------------------------------
         # ОБНОВЛЕНИЕ
@@ -528,12 +528,14 @@ async def importcars(message: Message):
                 UPDATE cars
                 SET name=%s,
                     organization=%s
-                WHERE car_id=%s
+                WHERE game_id=%s
+                AND category=%s
                 """,
                 (
                     full_name,
                     organization,
-                    existing[0]
+                    game_id,
+                    current_category
                 )
             )
 
