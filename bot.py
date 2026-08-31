@@ -941,6 +941,293 @@ async def car_noop(
 
     await callback.answer()
 
+# =========================================================
+# ГЛАВНОЕ МЕНЮ INFO
+# =========================================================
+
+def info_main_keyboard():
+
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="🎨 Палитра цветов",
+                    callback_data="info:colors"
+                ),
+                InlineKeyboardButton(
+                    text="📋 КТС / ЗКТС",
+                    callback_data="info:kts"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="👮 Список ГА",
+                    callback_data="info:ga"
+                ),
+                InlineKeyboardButton(
+                    text="🤖 Список команд",
+                    callback_data="info:commands"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="📜 Правила",
+                    callback_data="info:rules"
+                ),
+                InlineKeyboardButton(
+                    text="🛠 Тех отдел",
+                    callback_data="info:tech"
+                )
+            ]
+        ]
+    )
+
+
+# =========================================================
+# КОМАНДА /INFO
+# =========================================================
+
+@dp.message(Command("info"))
+async def info(message: Message):
+
+    await message.answer(
+        "ℹ️ <b>Полезная информация</b>\n\n"
+        "Здесь собрана полезная информация для новичков "
+        "и игроков сервера.\n\n"
+        "Выберите нужный раздел 👇",
+        reply_markup=info_main_keyboard(),
+        parse_mode="HTML"
+    )
+
+
+# =========================================================
+# ОБРАБОТКА КНОПОК INFO
+# =========================================================
+
+@dp.callback_query(F.data.startswith("info:"))
+async def info_callback(callback: CallbackQuery):
+
+    section = callback.data.split(":")[1]
+
+
+    # =====================================================
+    # ПАЛИТРА
+    # =====================================================
+
+    if section == "colors":
+
+        text = (
+            "🎨 <b>Палитра цветов</b>\n\n"
+            "Здесь вы можете ознакомиться с палитрой "
+            "цветов, используемых в игре.\n\n"
+            "Нажмите кнопку ниже, чтобы открыть палитру."
+        )
+
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="🎨 Открыть палитру",
+                        url="https://forum.blackrussia.online/threads/black-russia-Палитра-цветов.10019830/"
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🔙 Назад",
+                        callback_data="info:main"
+                    )
+                ]
+            ]
+        )
+
+
+    # =====================================================
+    # КТС / ЗКТС
+    # =====================================================
+
+    elif section == "kts":
+
+        text = (
+            "📋 <b>Список КТС / ЗКТС</b>\n\n"
+            "Здесь находится актуальный список КТС,КТС и история тех.отдела.\n\n"
+            "Нажмите кнопку ниже, чтобы открыть список."
+        )
+
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="📋 Открыть список",
+                        url="https://forum.blackrussia.online/threads/black-russia-История-руководства-технических-специалистов-Список-кураторов-зам-кураторов-тех-специалистов-Тех-специалисты-2020-2021-годов.11074252/"
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🔙 Назад",
+                        callback_data="info:main"
+                    )
+                ]
+            ]
+        )
+
+
+    # =====================================================
+    # ГА
+    # =====================================================
+
+    elif section == "ga":
+
+        text = (
+            "👮 <b>Список ГА</b>\n\n"
+            "Здесь находится актуальный список ГА и адм.отдела\n\n"
+            "Нажмите кнопку ниже, чтобы открыть список."
+        )
+
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="👮 Открыть список ГА",
+                        url="https://forum.blackrussia.online/threads/black-russia-История-ГА-Список-Главных-Администраторов-всех-серверов-рук-администрации-СА-ЗСА-Официальные-ресурсы-vk-forum-всех-серверов.11062508/"
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🔙 Назад",
+                        callback_data="info:main"
+                    )
+                ]
+            ]
+        )
+
+
+    # =====================================================
+    # КОМАНДЫ
+    # =====================================================
+
+    elif section == "commands":
+
+        text = (
+            "🤖 <b>Список команд</b>\n\n"
+            "Здесь находится список доступных команд BLACK RUSSIA.\n\n"
+            "Нажмите кнопку ниже, чтобы посмотреть команды."
+        )
+
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="🤖 Открыть список команд",
+                        url="https://forum.blackrussia.online/threads/black-russia-Актуальный-список-команд-сервера.11069991/"
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🔙 Назад",
+                        callback_data="info:main"
+                    )
+                ]
+            ]
+        )
+
+
+    # =====================================================
+    # ПРАВИЛА
+    # =====================================================
+
+    elif section == "rules":
+
+        text = (
+            "📜 <b>Правила</b>\n\n"
+            "Здесь находятся актуальные правила BLACK RUSSIA.\n\n"
+            "Перед началом игры рекомендуется ознакомиться "
+            "со всеми правилами."
+        )
+
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="📜 Открыть правила",
+                        url="https://forum.blackrussia.online/forums/Общие-правила-серверов.51/"
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🔙 Назад",
+                        callback_data="info:main"
+                    )
+                ]
+            ]
+        )
+
+
+    # =====================================================
+    # ТЕХ ОТДЕЛ
+    # =====================================================
+
+    elif section == "tech":
+
+        text = (
+            "🛠 <b>Технический отдел</b>\n\n"
+            "Здесь находится технического отдела.\n\n"
+            "Нажмите кнопку ниже, чтобы перейти к материалам."
+        )
+
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="🛠 Открыть тех отдел",
+                        url="https://forum.blackrussia.online/forums/Технический-раздел.22/"
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="🔙 Назад",
+                        callback_data="info:main"
+                    )
+                ]
+            ]
+        )
+
+
+    # =====================================================
+    # НАЗАД
+    # =====================================================
+
+    elif section == "main":
+
+        await callback.message.edit_text(
+            "ℹ️ <b>Полезная информация</b>\n\n"
+            "Здесь собрана полезная информация для новичков "
+            "и игроков сервера.\n\n"
+            "Выберите нужный раздел 👇",
+            reply_markup=info_main_keyboard(),
+            parse_mode="HTML"
+        )
+
+        await callback.answer()
+        return
+
+
+    else:
+        await callback.answer()
+        return
+
+
+    # =====================================================
+    # ИЗМЕНЯЕМ ТО ЖЕ САМОЕ СООБЩЕНИЕ
+    # =====================================================
+
+    await callback.message.edit_text(
+        text,
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+
+    await callback.answer()
+
 @dp.message(Command("admintab"))
 async def admintab(message: Message):
 
