@@ -2538,19 +2538,57 @@ async def report(message: Message):
         )
         return
 
-    execute(
+    # Сначала проверяем, есть ли свободный старый номер
+    free_id = execute(
         """
-        INSERT INTO reports(user_id, username)
-        VALUES(%s, %s)
-        RETURNING id
-        """,
-        (
-            message.from_user.id,
-            message.from_user.username
-        )
-    )
+        SELECT id
+        FROM free_report_ids
+        ORDER BY id
+        LIMIT 1
+        """
+    ).fetchone()
 
-    report_id = cur.fetchone()[0]
+    if free_id:
+        report_id = free_id[0]
+
+        # Убираем номер из списка свободных
+        execute(
+            """
+            DELETE FROM free_report_ids
+            WHERE id=%s
+            """,
+            (report_id,)
+        )
+
+        # Создаём репорт с этим номером
+        execute(
+            """
+            INSERT INTO reports
+            (id, user_id, username)
+            VALUES(%s, %s, %s)
+            """,
+            (
+                report_id,
+                message.from_user.id,
+                message.from_user.username
+            )
+        )
+
+    else:
+        # Если свободных старых номеров нет —
+        # PostgreSQL сам выдаёт следующий SERIAL ID
+        report_id = execute(
+            """
+            INSERT INTO reports
+            (user_id, username)
+            VALUES(%s, %s)
+            RETURNING id
+            """,
+            (
+                message.from_user.id,
+                message.from_user.username
+            )
+        ).fetchone()[0]
 
     active_reports[message.from_user.id] = report_id
 
@@ -2581,7 +2619,6 @@ async def reports(message: Message):
 
     args = message.text.split()
 
-    # /reports или /reports 2
     if len(args) > 2:
         await message.answer(
             "Использование:\n"
@@ -2607,18 +2644,17 @@ async def reports(message: Message):
     limit = 20
     offset = (page - 1) * limit
 
-    # Общее количество активных обращений
+    # Количество ВСЕХ обращений
     total = execute(
         """
         SELECT COUNT(*)
         FROM reports
-        WHERE status='open'
         """
     ).fetchone()[0]
 
     if total == 0:
         await message.answer(
-            "📭 Активных обращений нет."
+            "📭 Обращений нет."
         )
         return
 
@@ -2633,9 +2669,8 @@ async def reports(message: Message):
 
     rows = execute(
         """
-        SELECT id, user_id, username, created_at
+        SELECT id, user_id, username, created_at, status, verdict
         FROM reports
-        WHERE status='open'
         ORDER BY id DESC
         LIMIT %s OFFSET %s
         """,
@@ -2646,27 +2681,43 @@ async def reports(message: Message):
     ).fetchall()
 
     text = (
-        f"📋 Активные обращения\n"
+        f"📋 <b>Обращения</b>\n"
         f"Страница {page}/{total_pages}\n\n"
     )
 
-    for rep_id, user_id, username, created_at in rows:
+    for rep_id, user_id, username, created_at, status, verdict in rows:
 
         username = f"@{username}" if username else "нет"
 
-        text += (
-            f"#{rep_id}\n"
-            f"👤 {username}\n"
-            f"🆔 {user_id}\n"
-            f"📅 {created_at.strftime('%d.%m.%Y %H:%M')}\n\n"
-        )
+        if status == "closed":
+            verdict_text = verdict if verdict else "не указан"
+
+            text += (
+                f"#{rep_id} / {verdict_text}\n"
+                f"👤 {username}\n"
+                f"🆔 <code>{user_id}</code>\n"
+                f"📅 {created_at.strftime('%d.%m.%Y %H:%M')}\n"
+                f"🔒 Закрыто\n\n"
+            )
+
+        else:
+            text += (
+                f"#{rep_id}\n"
+                f"👤 {username}\n"
+                f"🆔 <code>{user_id}</code>\n"
+                f"📅 {created_at.strftime('%d.%m.%Y %H:%M')}\n"
+                f"🟢 Открыто\n\n"
+            )
 
     text += "────────────\n"
 
     if page < total_pages:
         text += f"➡️ Следующая страница: /reports {page + 1}"
 
-    await message.answer(text)
+    await message.answer(
+        text,
+        parse_mode="HTML"
+    )
 
 @dp.message(Command("reportinfo"))
 async def reportinfo(message: Message):
@@ -2913,7 +2964,7 @@ async def closerep(message: Message):
         f"✅ Обращение #{report_id} закрыто.\n"
         f"📋 Вердикт: {verdict}"
     )
-    
+
 @dp.message(Command("delrep"))
 async def delrep(message: Message):
 
@@ -2929,7 +2980,13 @@ async def delrep(message: Message):
         )
         return
 
-    report_id = int(args[1])
+    try:
+        report_id = int(args[1])
+    except ValueError:
+        await message.answer(
+            "❌ ID обращения должен быть числом."
+        )
+        return
 
     report = execute(
         """
@@ -2941,16 +2998,48 @@ async def delrep(message: Message):
     ).fetchone()
 
     if not report:
-        await message.answer("Обращение не найдено.")
+        await message.answer(
+            "❌ Обращение не найдено."
+        )
         return
 
+    # Удаляем сообщения этого обращения
     execute(
-        "DELETE FROM reports WHERE id=%s",
+        """
+        DELETE FROM report_messages
+        WHERE report_id=%s
+        """,
         (report_id,)
     )
 
+    # Удаляем само обращение
+    execute(
+        """
+        DELETE FROM reports
+        WHERE id=%s
+        """,
+        (report_id,)
+    )
+
+    # Добавляем номер в список свободных
+    execute(
+        """
+        INSERT INTO free_report_ids(id)
+        VALUES(%s)
+        ON CONFLICT (id) DO NOTHING
+        """,
+        (report_id,)
+    )
+
+    # Если удалённый репорт был активным у пользователя —
+    # убираем его из active_reports
+    for user_id, active_report_id in list(active_reports.items()):
+        if active_report_id == report_id:
+            del active_reports[user_id]
+
     await message.answer(
-        f"🗑 Обращение #{report_id} удалено."
+        f"🗑 Обращение #{report_id} удалено.\n"
+        f"♻ Номер #{report_id} снова доступен для нового обращения."
     )
 
 @dp.message(F.text | F.photo | F.video | F.document)
