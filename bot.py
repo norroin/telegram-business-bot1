@@ -2531,16 +2531,17 @@ async def upload_file(message: Message):
 @dp.message(Command("report"))
 async def report(message: Message):
 
+    # Только личные сообщения
     if message.chat.type != "private":
         await message.answer(
             "❌ Команда доступна только в личных сообщениях с ботом."
-    )
-    return
+        )
+        return
 
     execute(
         """
         INSERT INTO reports(user_id, username)
-        VALUES(%s,%s)
+        VALUES(%s, %s)
         RETURNING id
         """,
         (
@@ -2558,7 +2559,7 @@ async def report(message: Message):
         "Теперь отправляйте текст, фото, видео или документы.\n\n"
         "Когда закончите — используйте /endreport"
     )
-
+    
 @dp.message(Command("endreport"))
 async def end_report(message: Message):
 
