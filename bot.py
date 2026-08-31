@@ -2872,96 +2872,107 @@ async def delrep(message: Message):
         f"🗑 Обращение #{report_id} удалено."
     )
 
-@dp.message(F.text)
-async def send_rep_answer(message: Message):
-
-    if message.from_user.id not in waiting_rep_answer:
-        return
-
-    if message.text.startswith("/"):
-        await message.answer(
-            "❌ Напишите текст ответа пользователю."
-        )
-        return
-
-    report_id, user_id = waiting_rep_answer.pop(
-        message.from_user.id
-    )
-
-    execute(
-        """
-        INSERT INTO report_messages
-        (report_id, sender, text)
-        VALUES(%s,%s,%s)
-        """,
-        (
-            report_id,
-            "editor",
-            message.text
-        )
-    )
-
-    await bot.send_message(
-        user_id,
-        f"📨 Ответ редактора\n\n{message.text}"
-    )
-
-    await message.answer(
-        f"✅ Ответ по обращению #{report_id} отправлен."
-    )
-
 @dp.message(F.text | F.photo | F.video | F.document)
 async def report_messages(message: Message):
 
-    # Если редактор сейчас отвечает через /repsms,
-    # не трогаем его сообщение здесь
-    if message.from_user.id in waiting_rep_answer:
-        return
+    user_id = message.from_user.id
 
-    # Если нет активного обращения — ничего не делаем
-    if message.from_user.id not in active_reports:
-        return
+    # ==========================================
+    # 1. РЕДАКТОР ОТВЕЧАЕТ ЧЕРЕЗ /repsms
+    # ==========================================
 
-    # Команды не сохраняем
-    if message.text and message.text.startswith("/"):
+    if user_id in waiting_rep_answer:
+
+        # Команды не считаем ответом
+        if message.text and message.text.startswith("/"):
+            await message.answer(
+                "❌ Сейчас ожидается текст ответа пользователю."
+            )
+            return
+
+        report_id, target_user_id = waiting_rep_answer.pop(user_id)
+
+        text = message.text if message.text else None
+
+        # Ответ редактора сохраняем в историю
+        execute(
+            """
+            INSERT INTO report_messages
+            (report_id, sender, text, file_id, file_type)
+            VALUES(%s,%s,%s,%s,%s)
+            """,
+            (
+                report_id,
+                "editor",
+                text,
+                None,
+                None
+            )
+        )
+
+        await bot.send_message(
+            target_user_id,
+            f"📨 Ответ редактора\n\n{text}"
+        )
+
         await message.answer(
-            "❌ Сначала завершите обращение командой /endreport."
+            f"✅ Ответ по обращению #{report_id} отправлен."
         )
+
         return
 
-    report_id = active_reports[message.from_user.id]
 
-    text = message.text if message.text else None
-    file_id = None
-    file_type = None
+    # ==========================================
+    # 2. ПОЛЬЗОВАТЕЛЬ ПИШЕТ В /report
+    # ==========================================
 
-    if message.photo:
-        file_id = message.photo[-1].file_id
-        file_type = "photo"
+    if user_id in active_reports:
 
-    elif message.video:
-        file_id = message.video.file_id
-        file_type = "video"
+        # Команды не записываем в историю
+        if message.text and message.text.startswith("/"):
 
-    elif message.document:
-        file_id = message.document.file_id
-        file_type = "document"
+            await message.answer(
+                "❌ Вы находитесь в активном обращении.\n\n"
+                "Чтобы закончить его, используйте /endreport"
+            )
+            return
 
-    execute(
-        """
-        INSERT INTO report_messages
-        (report_id, sender, text, file_id, file_type)
-        VALUES(%s,%s,%s,%s,%s)
-        """,
-        (
-            report_id,
-            "user",
-            text,
-            file_id,
-            file_type
+        report_id = active_reports[user_id]
+
+        text = message.text if message.text else None
+
+        file_id = None
+        file_type = None
+
+        if message.photo:
+            file_id = message.photo[-1].file_id
+            file_type = "photo"
+
+        elif message.video:
+            file_id = message.video.file_id
+            file_type = "video"
+
+        elif message.document:
+            file_id = message.document.file_id
+            file_type = "document"
+
+        execute(
+            """
+            INSERT INTO report_messages
+            (report_id, sender, text, file_id, file_type)
+            VALUES(%s,%s,%s,%s,%s)
+            """,
+            (
+                report_id,
+                "user",
+                text,
+                file_id,
+                file_type
+            )
         )
-    )
-    
+
+        return
+
 @dp.message()
 async def save_zbt(message: Message):
 
