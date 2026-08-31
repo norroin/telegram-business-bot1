@@ -135,6 +135,16 @@ async def start(message: Message):
                     text="📝 Написать жалобу",
                     callback_data="report_info"
                 )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="ℹ️ Информация",
+                    callback_data="start_info"
+                ),
+                InlineKeyboardButton(
+                    text="⚔️ Битва семей",
+                    callback_data="start_bs"
+                )
             ]
         ]
     )
@@ -146,7 +156,7 @@ async def start(message: Message):
         reply_markup=kb,
         parse_mode="Markdown"
     )
-
+    
 @dp.message(Command("business"))
 async def business(message: Message):
     
@@ -2197,6 +2207,31 @@ async def report_info(callback: CallbackQuery):
         "<code>/report</code> в личные сообщения с ботом.",
         parse_mode="HTML"
     )
+
+@dp.callback_query(F.data == "start_info")
+async def start_info_callback(callback: CallbackQuery):
+
+    await callback.message.answer(
+        "ℹ️ <b>Информация</b>\n\n"
+        "Чтобы посмотреть полезную информацию, "
+        "напишите команду /info в личные сообщения с ботом.",
+        parse_mode="HTML"
+    )
+
+    await callback.answer()
+
+
+@dp.callback_query(F.data == "start_bs")
+async def start_bs_callback(callback: CallbackQuery):
+
+    await callback.message.answer(
+        "⚔️ <b>Битва семей</b>\n\n"
+        "Чтобы открыть информацию о битве семей, "
+        "напишите команду /bs в личные сообщения с ботом.",
+        parse_mode="HTML"
+    )
+
+    await callback.answer()
 
 @dp.message(Command("addbiz"))
 async def addbiz(message: Message):
