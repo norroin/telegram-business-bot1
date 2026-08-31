@@ -2872,6 +2872,47 @@ async def delrep(message: Message):
         f"🗑 Обращение #{report_id} удалено."
     )
 
+@dp.message(F.text)
+async def send_rep_answer(message: Message):
+
+    # Если редактор не находится в режиме ответа —
+    # ничего не делаем
+    if message.from_user.id not in waiting_rep_answer:
+        return
+
+    # Команды не являются ответом
+    if message.text.startswith("/"):
+        await message.answer(
+            "❌ Напишите текст ответа пользователю."
+        )
+        return
+
+    report_id, user_id = waiting_rep_answer.pop(
+        message.from_user.id
+    )
+
+    execute(
+        """
+        INSERT INTO report_messages
+        (report_id, sender, text)
+        VALUES(%s,%s,%s)
+        """,
+        (
+            report_id,
+            "editor",
+            message.text
+        )
+    )
+
+    await bot.send_message(
+        user_id,
+        f"📨 Ответ редактора\n\n{message.text}"
+    )
+
+    await message.answer(
+        f"✅ Ответ по обращению #{report_id} отправлен."
+    )
+
 @dp.message(F.text | F.photo | F.video | F.document)
 async def report_messages(message: Message):
 
@@ -2918,44 +2959,6 @@ async def report_messages(message: Message):
             file_id,
             file_type
         )
-    )
-
-@dp.message(F.text)
-async def send_rep_answer(message: Message):
-
-    # Команды не обрабатываем
-    if message.text.startswith("/"):
-        return
-
-    # Если редактор не отвечает на обращение —
-    # ничего не делаем
-    if message.from_user.id not in waiting_rep_answer:
-        return
-
-    report_id, user_id = waiting_rep_answer.pop(
-        message.from_user.id
-    )
-
-    execute(
-        """
-        INSERT INTO report_messages
-        (report_id, sender, text)
-        VALUES(%s,%s,%s)
-        """,
-        (
-            report_id,
-            "editor",
-            message.text
-        )
-    )
-
-    await bot.send_message(
-        user_id,
-        f"📨 Ответ редактора\n\n{message.text}"
-    )
-
-    await message.answer(
-        "✅ Ответ отправлен."
     )
 
 @dp.message()
