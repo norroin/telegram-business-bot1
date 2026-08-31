@@ -2872,6 +2872,54 @@ async def delrep(message: Message):
         f"🗑 Обращение #{report_id} удалено."
     )
 
+@dp.message(F.text | F.photo | F.video | F.document)
+async def report_messages(message: Message):
+
+    # Нет активного обращения — этот обработчик ничего не делает
+    if message.from_user.id not in active_reports:
+        return
+
+    # Команды не записываем в историю
+    if message.text and message.text.startswith("/"):
+        await message.answer(
+            "❌ Сначала завершите обращение командой /endreport."
+        )
+        return
+
+    report_id = active_reports[message.from_user.id]
+
+    text = message.text if message.text else None
+
+    file_id = None
+    file_type = None
+
+    if message.photo:
+        file_id = message.photo[-1].file_id
+        file_type = "photo"
+
+    elif message.video:
+        file_id = message.video.file_id
+        file_type = "video"
+
+    elif message.document:
+        file_id = message.document.file_id
+        file_type = "document"
+
+    execute(
+        """
+        INSERT INTO report_messages
+        (report_id, sender, text, file_id, file_type)
+        VALUES(%s, %s, %s, %s, %s)
+        """,
+        (
+            report_id,
+            "user",
+            text,
+            file_id,
+            file_type
+        )
+    )
+
 @dp.message(F.text)
 async def send_rep_answer(message: Message):
 
@@ -2908,72 +2956,6 @@ async def send_rep_answer(message: Message):
 
     await message.answer(
         "✅ Ответ отправлен."
-    )
-
-@dp.message(F.text | F.photo | F.video | F.document)
-async def report_messages(message: Message):
-
-    # Если это команда — не сохраняем её в обращение
-    if message.text and message.text.startswith("/"):
-        if message.from_user.id in active_reports:
-            await message.answer(
-                "❌ Сначала завершите обращение командой /endreport."
-            )
-        return
-
-    # Ищем активное обращение
-    if message.from_user.id not in active_reports:
-
-        report = execute(
-            """
-            SELECT id
-            FROM reports
-            WHERE user_id=%s
-            AND status='open'
-            ORDER BY id DESC
-            LIMIT 1
-            """,
-            (message.from_user.id,)
-        ).fetchone()
-
-        if not report:
-            return
-
-        report_id = report[0]
-
-    else:
-        report_id = active_reports[message.from_user.id]
-
-    text = message.text if message.text else None
-
-    file_id = None
-    file_type = None
-
-    if message.photo:
-        file_id = message.photo[-1].file_id
-        file_type = "photo"
-
-    elif message.video:
-        file_id = message.video.file_id
-        file_type = "video"
-
-    elif message.document:
-        file_id = message.document.file_id
-        file_type = "document"
-
-    execute(
-        """
-        INSERT INTO report_messages
-        (report_id, sender, text, file_id, file_type)
-        VALUES(%s,%s,%s,%s,%s)
-        """,
-        (
-            report_id,
-            "user",
-            text,
-            file_id,
-            file_type
-        )
     )
 
 @dp.message()
