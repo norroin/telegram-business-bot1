@@ -3,7 +3,11 @@ import asyncio
 import init_db
 import cloudinary
 import cloudinary.uploader
+import re
 
+from aiogram import F
+from aiogram.filters import Command
+from aiogram.types import Message
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
 from aiogram.types import (
@@ -262,188 +266,370 @@ async def bizlist(message: Message):
 
     await message.answer(text)
 
-CAR_CLASS_HEADERS = {
-    "Низкий": [
-        "транспорт низкого автосалона",
-        "низкий класс",
-    ],
-    "Средний": [
-        "транспорт среднего автосалона",
-        "средний класс",
-    ],
-    "Высокий": [
-        "транспорт высокого автосалона",
-        "высокий класс",
-    ],
-    "Грузовой": [
-        "грузовой класс",
-        "грузовой транспорт",
-        "транспорт грузового автосалона",
-    ],
-    "Мотоциклы": [
-        "мотоциклы",
-        "мотоцикл",
-        "транспорт мотоциклов",
-    ],
-    "Яхты": [
-        "яхты",
-        "яхта",
-        "транспорт яхт",
-    ],
-    "Уникальный": [
-        "уникальный класс",
-        "уникальный транспорт",
-        "транспорт уникального автосалона",
-    ],
-    "Организации": [
-        "организации",
-        "организация",
-        "транспорт организаций",
-    ],
-    "Рабочий": [
-        "рабочий класс",
-        "рабочий транспорт",
-        "транспорт рабочего класса",
-    ],
-    "Прицепы": [
-        "прицепы",
-        "прицеп",
-        "транспорт прицепов",
-    ],
-}
-
-CAR_CLASS_INFO = {
-    "Низкий": "🔹 Низкий класс",
-    "Средний": "🔸 Средний класс",
-    "Высокий": "🔶 Высокий класс",
-    "Грузовой": "🚚 Грузовой класс",
-    "Мотоциклы": "🏍 Мотоциклы",
-    "Яхты": "🛥 Яхты",
-    "Уникальный": "⭐ Уникальный класс",
-    "Организации": "🏢 Организации",
-    "Рабочий": "🔧 Рабочий класс",
-    "Прицепы": "🛻 Прицепы",
-}
+CAR_CATEGORIES = [
+    "Низкий класс",
+    "Средний класс",
+    "Высокий класс",
+    "Грузовой класс",
+    "Мотоциклы",
+    "Яхты",
+    "Уникальный класс",
+    "Организации",
+    "Рабочий класс",
+    "Прицепы"
+]
 
 
-def car_classes_keyboard():
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="🔹 Низкий",
-                    callback_data="cars_class:Низкий"
-                ),
-                InlineKeyboardButton(
-                    text="🔸 Средний",
-                    callback_data="cars_class:Средний"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="🔶 Высокий",
-                    callback_data="cars_class:Высокий"
-                ),
-                InlineKeyboardButton(
-                    text="🚚 Грузовой",
-                    callback_data="cars_class:Грузовой"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="🏍 Мотоциклы",
-                    callback_data="cars_class:Мотоциклы"
-                ),
-                InlineKeyboardButton(
-                    text="🛥 Яхты",
-                    callback_data="cars_class:Яхты"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="⭐ Уникальный",
-                    callback_data="cars_class:Уникальный"
-                ),
-                InlineKeyboardButton(
-                    text="🏢 Организации",
-                    callback_data="cars_class:Организации"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="🔧 Рабочий",
-                    callback_data="cars_class:Рабочий"
-                ),
-                InlineKeyboardButton(
-                    text="🛻 Прицепы",
-                    callback_data="cars_class:Прицепы"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="❌ Выход",
-                    callback_data="cars_exit"
-                )
-            ]
-        ]
+def detect_car_category(line: str):
+    """
+    Определяет категорию по заголовку.
+    """
+
+    text = line.replace("*", "").strip().lower()
+
+    if "низкого автосалона" in text:
+        return "Низкий класс"
+
+    if "среднего автосалона" in text:
+        return "Средний класс"
+
+    if "высокого автосалона" in text:
+        return "Высокий класс"
+
+    if "грузового автосалона" in text:
+        return "Грузовой класс"
+
+    if "мотосалона" in text:
+        return "Мотоциклы"
+
+    if "салона яхт" in text:
+        return "Яхты"
+
+    if "уникальный транспорт организаций" in text:
+        return "Организации"
+
+    if "уникального транспорта" in text:
+        return "Уникальный класс"
+
+    if "рабочий транспорт" in text:
+        return "Рабочий класс"
+
+    if "прицепы" in text:
+        return "Прицепы"
+
+    return None
+
+
+@dp.message(Command("importcars"))
+async def importcars(message: Message):
+
+    if message.from_user.id not in ADMINS and not is_creator(message.from_user.id):
+        return
+
+    # Убираем /importcars из сообщения
+    text = re.sub(
+        r"^/importcars(?:@\w+)?\s*",
+        "",
+        message.text,
+        count=1,
+        flags=re.IGNORECASE
     )
 
+    if not text.strip():
+        await message.answer(
+            "❌ После /importcars нужно вставить список транспорта."
+        )
+        return
 
-def car_page_keyboard(car_class, page, total_pages):
+    current_category = None
+
+    added = 0
+    updated = 0
+    skipped = 0
+
+    for raw_line in text.splitlines():
+
+        line = raw_line.strip()
+
+        if not line:
+            continue
+
+        # Убираем *** в начале/конце
+        clean_line = line.strip("*").strip()
+
+        if not clean_line:
+            continue
+
+        # Проверяем заголовок категории
+        detected_category = detect_car_category(clean_line)
+
+        if detected_category:
+            current_category = detected_category
+            continue
+
+        # Если категория ещё не определена
+        if current_category is None:
+            skipped += 1
+            continue
+
+        # ------------------------------------------------
+        # ПОДДЕРЖИВАЕМ:
+        #
+        # 555 - ZAZ 968
+        #
+        # 2552 Toyota Supra A80
+        #
+        # ------------------------------------------------
+
+        match = re.match(
+            r"^(\d+)\s*(?:-\s*)?(.+?)$",
+            clean_line
+        )
+
+        if not match:
+            skipped += 1
+            continue
+
+        game_id = int(match.group(1))
+
+        full_name = match.group(2).strip()
+
+        if not full_name:
+            skipped += 1
+            continue
+
+        # Убираем оставшиеся ***
+        full_name = full_name.replace("*", "").strip()
+
+        organization = None
+
+        # ------------------------------------------------
+        # ОРГАНИЗАЦИИ
+        #
+        # Gazon Next | Армия
+        #
+        # ------------------------------------------------
+
+        if "|" in full_name:
+
+            name_part, organization_part = full_name.split(
+                "|",
+                1
+            )
+
+            full_name = name_part.strip()
+            organization = organization_part.strip()
+
+        # ------------------------------------------------
+        # ПРОВЕРЯЕМ СУЩЕСТВУЮЩУЮ ЗАПИСЬ
+        #
+        # Проверяем по game_id + category,
+        # поэтому один игровой ID может
+        # находиться в разных категориях.
+        # ------------------------------------------------
+
+        existing = execute(
+            """
+            SELECT car_id
+            FROM cars
+            WHERE game_id=%s
+            AND category=%s
+            LIMIT 1
+            """,
+            (
+                game_id,
+                current_category
+            )
+        ).fetchone()
+
+        # ------------------------------------------------
+        # ЕСЛИ УЖЕ ЕСТЬ — ОБНОВЛЯЕМ
+        # ------------------------------------------------
+
+        if existing:
+
+            execute(
+                """
+                UPDATE cars
+                SET name=%s,
+                    organization=%s
+                WHERE car_id=%s
+                """,
+                (
+                    full_name,
+                    organization,
+                    existing[0]
+                )
+            )
+
+            updated += 1
+
+        # ------------------------------------------------
+        # ЕСЛИ НЕТ — ДОБАВЛЯЕМ
+        # ------------------------------------------------
+
+        else:
+
+            execute(
+                """
+                INSERT INTO cars
+                (
+                    game_id,
+                    name,
+                    category,
+                    organization
+                )
+                VALUES(%s,%s,%s,%s)
+                """,
+                (
+                    game_id,
+                    full_name,
+                    current_category,
+                    organization
+                )
+            )
+
+            added += 1
+
+    await message.answer(
+        "✅ Импорт транспорта завершён.\n\n"
+        f"➕ Добавлено: {added}\n"
+        f"🔄 Обновлено: {updated}\n"
+        f"⚠️ Пропущено: {skipped}"
+    )
+
+CARS_PER_PAGE = 20
+
+
+def carlist_keyboard(category: str, page: int, total_pages: int):
+
+    buttons = []
+
+    categories = [
+        ("Низкий класс", "cars_low"),
+        ("Средний класс", "cars_medium"),
+        ("Высокий класс", "cars_high"),
+        ("Грузовой класс", "cars_truck"),
+        ("Мотоциклы", "cars_moto"),
+        ("Яхты", "cars_yacht"),
+        ("Уникальный класс", "cars_unique"),
+        ("Организации", "cars_org"),
+        ("Рабочий класс", "cars_work"),
+        ("Прицепы", "cars_trailer")
+    ]
+
+    # 2 кнопки в строке
+    for i in range(0, len(categories), 2):
+
+        row = []
+
+        for name, callback in categories[i:i + 2]:
+
+            row.append(
+                InlineKeyboardButton(
+                    text=name,
+                    callback_data=callback
+                )
+            )
+
+        buttons.append(row)
+
+    # Навигация
     navigation = []
 
     if page > 1:
+
         navigation.append(
             InlineKeyboardButton(
                 text="⬅️",
-                callback_data=f"cars_page:{car_class}:{page - 1}"
+                callback_data=f"carpage:{category}:{page - 1}"
             )
         )
 
     navigation.append(
         InlineKeyboardButton(
             text=f"{page}/{total_pages}",
-            callback_data="cars_current"
+            callback_data="car_noop"
         )
     )
 
     if page < total_pages:
+
         navigation.append(
             InlineKeyboardButton(
                 text="➡️",
-                callback_data=f"cars_page:{car_class}:{page + 1}"
+                callback_data=f"carpage:{category}:{page + 1}"
             )
         )
 
+    buttons.append(navigation)
+
     return InlineKeyboardMarkup(
-        inline_keyboard=[
-            navigation,
-            [
-                InlineKeyboardButton(
-                    text="↩️ Назад",
-                    callback_data="cars_back"
-                )
-            ]
-        ]
+        inline_keyboard=buttons
     )
 
 
-def get_car_page(car_class, page):
-    per_page = 20
+def get_category_title(category: str):
 
-    total = execute(
+    return {
+        "Низкий класс": "🚗 Низкий класс",
+        "Средний класс": "🚘 Средний класс",
+        "Высокий класс": "🏎 Высокий класс",
+        "Грузовой класс": "🚛 Грузовой класс",
+        "Мотоциклы": "🏍 Мотоциклы",
+        "Яхты": "🛥 Яхты",
+        "Уникальный класс": "⭐ Уникальный класс",
+        "Организации": "🏢 Организации",
+        "Рабочий класс": "🚒 Рабочий класс",
+        "Прицепы": "🚚 Прицепы"
+    }.get(category, category)
+
+
+async def show_carlist(
+    message: Message,
+    category: str,
+    page: int = 1,
+    edit: bool = False
+):
+
+    count_row = execute(
         """
         SELECT COUNT(*)
         FROM cars
-        WHERE car_class=%s
+        WHERE category=%s
         """,
-        (car_class,)
-    ).fetchone()[0]
+        (category,)
+    ).fetchone()
+
+    total = count_row[0] if count_row else 0
 
     if total == 0:
-        return [], 0
 
-    total_pages = (total + per_page - 1) // per_page
+        text = (
+            f"{get_category_title(category)}\n\n"
+            "🚫 Транспорта в этой категории нет."
+        )
+
+        keyboard = carlist_keyboard(
+            category,
+            1,
+            1
+        )
+
+        if edit:
+            await message.edit_text(
+                text,
+                reply_markup=keyboard
+            )
+        else:
+            await message.answer(
+                text,
+                reply_markup=keyboard
+            )
+
+        return
+
+    total_pages = (total + CARS_PER_PAGE - 1) // CARS_PER_PAGE
 
     if page < 1:
         page = 1
@@ -451,219 +637,60 @@ def get_car_page(car_class, page):
     if page > total_pages:
         page = total_pages
 
-    offset = (page - 1) * per_page
+    offset = (page - 1) * CARS_PER_PAGE
 
     rows = execute(
         """
-        SELECT id, model
+        SELECT game_id, name, organization
         FROM cars
-        WHERE car_class=%s
-        ORDER BY id
+        WHERE category=%s
+        ORDER BY game_id
         LIMIT %s OFFSET %s
         """,
         (
-            car_class,
-            per_page,
+            category,
+            CARS_PER_PAGE,
             offset
         )
     ).fetchall()
 
-    return rows, total_pages
-
-
-@dp.message(Command("importcars"))
-async def importcars(message: Message):
-
-    if not await check_sub(bot, CHANNEL_ID, message):
-        await require_sub(message)
-        return
-
-    await register_user(bot, OWNER_ID, message)
-
-    if get_role(message.from_user.id) < 2:
-        await message.answer(
-            "❌ Недостаточно прав."
-        )
-        return
-
-    text = message.text.replace(
-        "/importcars",
-        "",
-        1
-    ).strip()
-
-    if not text:
-        await message.answer(
-            "❌ Список автомобилей не указан.\n\n"
-            "Пример:\n\n"
-            "/importcars\n\n"
-            "***Транспорт низкого автосалона***\n"
-            "***555 - ZAZ 968***\n"
-            "***549 - VAZ 1111***\n\n"
-            "***Транспорт среднего автосалона***\n"
-            "***2610 - BMW M5 E34***"
-        )
-        return
-
-    current_class = None
-
-    added = 0
-    updated = 0
-    skipped = 0
-    errors = 0
-
-    class_added = {}
-
-    for raw_line in text.splitlines():
-
-        line = raw_line.strip()
-
-        line = line.replace(
-            "***",
-            ""
-        ).strip()
-
-        if not line:
-            continue
-
-        lower_line = line.lower()
-        lower_line = lower_line.rstrip(" :")
-
-        found_class = None
-
-        for car_class, headers in CAR_CLASS_HEADERS.items():
-
-            for header in headers:
-
-                if header.lower() in lower_line:
-                    found_class = car_class
-                    break
-
-            if found_class:
-                break
-
-        if found_class:
-
-            current_class = found_class
-
-            if current_class not in class_added:
-                class_added[current_class] = 0
-
-            continue
-
-        if current_class is None:
-            continue
-
-        if " - " not in line:
-            errors += 1
-            continue
-
-        id_text, model = line.split(
-            " - ",
-            1
-        )
-
-        id_text = id_text.strip()
-        model = model.strip()
-
-        try:
-            car_id = int(id_text)
-
-        except ValueError:
-            errors += 1
-            continue
-
-        if not model:
-            errors += 1
-            continue
-
-        exists = execute(
-            """
-            SELECT car_class, model
-            FROM cars
-            WHERE id=%s
-            """,
-            (car_id,)
-        ).fetchone()
-
-        if exists:
-
-            old_class, old_model = exists
-
-            if (
-                old_class == current_class
-                and old_model == model
-            ):
-                skipped += 1
-                continue
-
-            execute(
-                """
-                UPDATE cars
-                SET model=%s,
-                    car_class=%s
-                WHERE id=%s
-                """,
-                (
-                    model,
-                    current_class,
-                    car_id
-                )
-            )
-
-            updated += 1
-            continue
-
-        execute(
-            """
-            INSERT INTO cars
-            (id, model, car_class)
-            VALUES(%s, %s, %s)
-            """,
-            (
-                car_id,
-                model,
-                current_class
-            )
-        )
-
-        added += 1
-
-        class_added[current_class] = (
-            class_added.get(
-                current_class,
-                0
-            ) + 1
-        )
-
-    result = (
-        "✅ <b>Импорт автомобилей завершён</b>\n\n"
-        f"➕ Добавлено: <b>{added}</b>\n"
-        f"🔄 Обновлено: <b>{updated}</b>\n"
-        f"⏭ Пропущено: <b>{skipped}</b>\n"
-        f"⚠️ Ошибок: <b>{errors}</b>\n"
+    text = (
+        f"{get_category_title(category)}\n"
+        f"📄 Страница {page}/{total_pages}\n\n"
     )
 
-    if class_added:
+    for game_id, name, organization in rows:
 
-        result += "\n📂 <b>Добавлено по категориям:</b>\n\n"
+        text += (
+            f"🆔 {game_id} — <b>{name}</b>"
+        )
 
-        for car_class, count in class_added.items():
+        if organization:
+            text += f" | {organization}"
 
-            emoji_name = CAR_CLASS_INFO.get(
-                car_class,
-                car_class
-            )
+        text += "\n"
 
-            result += (
-                f"{emoji_name}: "
-                f"<b>{count}</b>\n"
-            )
-
-    await message.answer(
-        result,
-        parse_mode="HTML"
+    keyboard = carlist_keyboard(
+        category,
+        page,
+        total_pages
     )
+
+    if edit:
+
+        await message.edit_text(
+            text,
+            reply_markup=keyboard,
+            parse_mode="HTML"
+        )
+
+    else:
+
+        await message.answer(
+            text,
+            reply_markup=keyboard,
+            parse_mode="HTML"
+        )
 
 
 @dp.message(Command("carlist"))
@@ -673,183 +700,81 @@ async def carlist(message: Message):
         await require_sub(message)
         return
 
-    await register_user(bot, OWNER_ID, message)
+    await register_user(
+        bot,
+        OWNER_ID,
+        message
+    )
 
-    total = execute(
-        "SELECT COUNT(*) FROM cars"
-    ).fetchone()[0]
-
-    if total == 0:
-
-        await message.answer(
-            "🚗 <b>АВТОМОБИЛИ</b>\n\n"
-            "❌ Список автомобилей пуст.",
-            parse_mode="HTML"
-        )
-
-        return
+    keyboard = carlist_keyboard(
+        "Низкий класс",
+        1,
+        1
+    )
 
     await message.answer(
-        "🚗 <b>АВТОМОБИЛИ</b>\n\n"
+        "🚗 <b>Каталог транспорта</b>\n\n"
         "Выберите категорию:",
-        reply_markup=car_classes_keyboard(),
+        reply_markup=keyboard,
         parse_mode="HTML"
     )
 
+@dp.callback_query(F.data.startswith("cars_"))
+async def car_category_callback(callback: CallbackQuery):
 
-@dp.callback_query(F.data.startswith("cars_class:"))
-async def cars_class(callback: CallbackQuery):
+    category_map = {
+        "cars_low": "Низкий класс",
+        "cars_medium": "Средний класс",
+        "cars_high": "Высокий класс",
+        "cars_truck": "Грузовой класс",
+        "cars_moto": "Мотоциклы",
+        "cars_yacht": "Яхты",
+        "cars_unique": "Уникальный класс",
+        "cars_org": "Организации",
+        "cars_work": "Рабочий класс",
+        "cars_trailer": "Прицепы"
+    }
 
-    car_class = callback.data.split(
-        ":",
-        1
-    )[1]
+    category = category_map.get(callback.data)
 
-    rows, total_pages = get_car_page(
-        car_class,
-        1
-    )
-
-    if not rows:
-
-        await callback.answer(
-            "В этой категории автомобилей нет.",
-            show_alert=True
-        )
-
+    if not category:
+        await callback.answer()
         return
 
-    title = CAR_CLASS_INFO.get(
-        car_class,
-        car_class
-    )
-
-    text = (
-        f"🚗 <b>{title}</b>\n\n"
-    )
-
-    for car_id, model in rows:
-
-        text += (
-            f"🆔 <code>{car_id}</code> — "
-            f"<b>{model}</b>\n"
-        )
-
-    text += (
-        f"\n📄 Страница <b>1/{total_pages}</b>"
-    )
-
-    await callback.message.edit_text(
-        text,
-        reply_markup=car_page_keyboard(
-            car_class,
-            1,
-            total_pages
-        ),
-        parse_mode="HTML"
+    await show_carlist(
+        callback.message,
+        category,
+        1,
+        edit=True
     )
 
     await callback.answer()
 
-
-@dp.callback_query(F.data.startswith("cars_page:"))
-async def cars_page(callback: CallbackQuery):
-
-    parts = callback.data.split(":")
-
-    if len(parts) != 3:
-
-        await callback.answer(
-            "Ошибка страницы.",
-            show_alert=True
-        )
-
-        return
-
-    car_class = parts[1]
+@dp.callback_query(F.data.startswith("carpage:"))
+async def car_page_callback(callback: CallbackQuery):
 
     try:
-        page = int(parts[2])
 
-    except ValueError:
+        _, category, page = callback.data.split(":")
 
-        await callback.answer(
-            "Ошибка страницы.",
-            show_alert=True
-        )
+        page = int(page)
 
+    except (ValueError, AttributeError):
+
+        await callback.answer()
         return
 
-    rows, total_pages = get_car_page(
-        car_class,
-        page
-    )
-
-    if not rows:
-
-        await callback.answer(
-            "Страница не найдена.",
-            show_alert=True
-        )
-
-        return
-
-    title = CAR_CLASS_INFO.get(
-        car_class,
-        car_class
-    )
-
-    text = (
-        f"🚗 <b>{title}</b>\n\n"
-    )
-
-    for car_id, model in rows:
-
-        text += (
-            f"🆔 <code>{car_id}</code> — "
-            f"<b>{model}</b>\n"
-        )
-
-    text += (
-        f"\n📄 Страница "
-        f"<b>{page}/{total_pages}</b>"
-    )
-
-    await callback.message.edit_text(
-        text,
-        reply_markup=car_page_keyboard(
-            car_class,
-            page,
-            total_pages
-        ),
-        parse_mode="HTML"
+    await show_carlist(
+        callback.message,
+        category,
+        page,
+        edit=True
     )
 
     await callback.answer()
 
-
-@dp.callback_query(F.data == "cars_current")
-async def cars_current(callback: CallbackQuery):
-    await callback.answer()
-
-
-@dp.callback_query(F.data == "cars_back")
-async def cars_back(callback: CallbackQuery):
-
-    await callback.message.edit_text(
-        "🚗 <b>АВТОМОБИЛИ</b>\n\n"
-        "Выберите категорию:",
-        reply_markup=car_classes_keyboard(),
-        parse_mode="HTML"
-    )
-
-    await callback.answer()
-
-
-@dp.callback_query(F.data == "cars_exit")
-async def cars_exit(callback: CallbackQuery):
-
-    await callback.message.delete()
+@dp.callback_query(F.data == "car_noop")
+async def car_noop(callback: CallbackQuery):
 
     await callback.answer()
 
