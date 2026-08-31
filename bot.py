@@ -2579,20 +2579,76 @@ async def reports(message: Message):
     if message.from_user.id not in ADMINS and not is_creator(message.from_user.id):
         return
 
+    args = message.text.split()
+
+    # /reports или /reports 2
+    if len(args) > 2:
+        await message.answer(
+            "Использование:\n"
+            "/reports\n"
+            "/reports 2"
+        )
+        return
+
+    try:
+        page = int(args[1]) if len(args) == 2 else 1
+    except ValueError:
+        await message.answer(
+            "❌ Номер страницы должен быть числом."
+        )
+        return
+
+    if page < 1:
+        await message.answer(
+            "❌ Номер страницы должен быть больше 0."
+        )
+        return
+
+    limit = 20
+    offset = (page - 1) * limit
+
+    # Общее количество активных обращений
+    total = execute(
+        """
+        SELECT COUNT(*)
+        FROM reports
+        WHERE status='open'
+        """
+    ).fetchone()[0]
+
+    if total == 0:
+        await message.answer(
+            "📭 Активных обращений нет."
+        )
+        return
+
+    total_pages = (total + limit - 1) // limit
+
+    if page > total_pages:
+        await message.answer(
+            f"❌ Такой страницы нет.\n"
+            f"Всего страниц: {total_pages}"
+        )
+        return
+
     rows = execute(
         """
         SELECT id, user_id, username, created_at
         FROM reports
         WHERE status='open'
-        ORDER BY id
-        """
+        ORDER BY id DESC
+        LIMIT %s OFFSET %s
+        """,
+        (
+            limit,
+            offset
+        )
     ).fetchall()
 
-    if not rows:
-        await message.answer("📭 Активных обращений нет.")
-        return
-
-    text = "📋 Активные обращения\n\n"
+    text = (
+        f"📋 Активные обращения\n"
+        f"Страница {page}/{total_pages}\n\n"
+    )
 
     for rep_id, user_id, username, created_at in rows:
 
@@ -2604,6 +2660,11 @@ async def reports(message: Message):
             f"🆔 {user_id}\n"
             f"📅 {created_at.strftime('%d.%m.%Y %H:%M')}\n\n"
         )
+
+    text += "────────────\n"
+
+    if page < total_pages:
+        text += f"➡️ Следующая страница: /reports {page + 1}"
 
     await message.answer(text)
 
@@ -2788,28 +2849,42 @@ async def closerep(message: Message):
     if message.from_user.id not in ADMINS and not is_creator(message.from_user.id):
         return
 
-    args = message.text.split()
+    args = message.text.split(maxsplit=2)
 
-    if len(args) != 2:
+    if len(args) < 3:
         await message.answer(
             "Использование:\n"
-            "/closerep ID"
+            "/closerep ID Вердикт\n\n"
+            "Пример:\n"
+            "/closerep 15 Нарушение правил"
         )
         return
 
-    report_id = int(args[1])
+    try:
+        report_id = int(args[1])
+    except ValueError:
+        await message.answer("❌ ID обращения должен быть числом.")
+        return
+
+    verdict = args[2].strip()
+
+    if not verdict:
+        await message.answer("❌ Укажите вердикт.")
+        return
 
     report = execute(
         """
         SELECT user_id
         FROM reports
-        WHERE id=%s
+        WHERE id=%s AND status='open'
         """,
         (report_id,)
     ).fetchone()
 
     if not report:
-        await message.answer("Обращение не найдено.")
+        await message.answer(
+            "❌ Обращение не найдено или уже закрыто."
+        )
         return
 
     user_id = report[0]
@@ -2818,21 +2893,27 @@ async def closerep(message: Message):
         """
         UPDATE reports
         SET status='closed',
+            verdict=%s,
             closed_at=NOW()
         WHERE id=%s
         """,
-        (report_id,)
+        (
+            verdict,
+            report_id
+        )
     )
 
     await bot.send_message(
         user_id,
-        f"✅ Ваше обращение #{report_id} было закрыто редактором."
+        f"✅ Ваше обращение #{report_id} было закрыто редактором.\n\n"
+        f"📋 Вердикт: {verdict}"
     )
 
     await message.answer(
-        f"✅ Обращение #{report_id} закрыто."
+        f"✅ Обращение #{report_id} закрыто.\n"
+        f"📋 Вердикт: {verdict}"
     )
-
+    
 @dp.message(Command("delrep"))
 async def delrep(message: Message):
 
