@@ -104,15 +104,43 @@ async def start(message: Message):
 
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="🏢 Бизнесы", callback_data="biz")],
-            [InlineKeyboardButton(text="📂 Категории", callback_data="categories")],
-            [InlineKeyboardButton(text="ℹ️ Помощь", callback_data="help")]
+            [
+                InlineKeyboardButton(
+                    text="🏢 Бизнесы",
+                    callback_data="biz"
+                ),
+                InlineKeyboardButton(
+                    text="📂 Категории",
+                    callback_data="categories"
+                ),
+                InlineKeyboardButton(
+                    text="ℹ️ Помощь",
+                    callback_data="help"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="📥 Скачать ЗБТ",
+                    callback_data="zbt_info"
+                ),
+                InlineKeyboardButton(
+                    text="👮 Админы",
+                    callback_data="admins_info"
+                ),
+                InlineKeyboardButton(
+                    text="📝 Написать жалобу",
+                    callback_data="report_info"
+                )
+            ]
         ]
     )
 
     await message.answer(
-        "Добро пожаловать!",
-        reply_markup=kb
+        f"👋 **Привет, {message.from_user.first_name}!**\n"
+        "**Я BOT BRYANSK — бот-помощник по игре Black Russia сервера BRYANSK[66].**\n\n"
+        "**Выбери раздел ниже 👇**",
+        reply_markup=kb,
+        parse_mode="Markdown"
     )
 
 @dp.message(Command("business"))
@@ -1165,6 +1193,44 @@ async def menu_help(message: Message):
         )
 
     await message.answer(text)
+
+@dp.callback_query(F.data == "zbt_info")
+async def zbt_info(callback: CallbackQuery):
+
+    await callback.answer()
+
+    await callback.message.answer(
+        "📥 <b>Скачать ЗБТ</b>\n\n"
+        "Чтобы скачать ЗБТ, напишите команду "
+        "<code>/zbt</code> в личные сообщения с ботом.",
+        parse_mode="HTML"
+    )
+
+
+@dp.callback_query(F.data == "admins_info")
+async def admins_info(callback: CallbackQuery):
+
+    await callback.answer()
+
+    await callback.message.answer(
+        "👮 <b>Администраторы</b>\n\n"
+        "Чтобы посмотреть список администраторов, "
+        "напишите команду <code>/admins</code> в личные сообщения с ботом.",
+        parse_mode="HTML"
+    )
+
+
+@dp.callback_query(F.data == "report_info")
+async def report_info(callback: CallbackQuery):
+
+    await callback.answer()
+
+    await callback.message.answer(
+        "📝 <b>Написать жалобу</b>\n\n"
+        "Чтобы написать жалобу, напишите команду "
+        "<code>/report</code> в личные сообщения с ботом.",
+        parse_mode="HTML"
+    )
 
 @dp.message(Command("addbiz"))
 async def addbiz(message: Message):
