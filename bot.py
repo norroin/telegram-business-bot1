@@ -818,22 +818,6 @@ async def show_car_category(
 @dp.message(Command("carlist"))
 async def carlist(message: Message):
 
-    if not await check_sub(
-        bot,
-        CHANNEL_ID,
-        message
-    ):
-
-        await require_sub(message)
-
-        return
-
-    await register_user(
-        bot,
-        OWNER_ID,
-        message
-    )
-
     await message.answer(
         "🚗 <b>Каталог транспорта</b>\n\n"
         "Выберите нужную категорию:",
@@ -2115,7 +2099,8 @@ async def set_commands(bot):
         BotCommand(command="addzbt", description="Добавить пост о збт"),
         BotCommand(command="del", description="Удалить пост о збт"),
         BotCommand(command="repadm", description="Изменить репутацию "),
-        BotCommand(command="casino", description="Информация о казино")
+        BotCommand(command="casino", description="Информация о казино"),
+        BotCommand(command="carplist", description="Айди автомобилей "),
     ]
 
     await bot.set_my_commands(commands)
