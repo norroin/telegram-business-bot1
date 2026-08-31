@@ -2875,12 +2875,9 @@ async def delrep(message: Message):
 @dp.message(F.text)
 async def send_rep_answer(message: Message):
 
-    # Если редактор не находится в режиме ответа —
-    # ничего не делаем
     if message.from_user.id not in waiting_rep_answer:
         return
 
-    # Команды не являются ответом
     if message.text.startswith("/"):
         await message.answer(
             "❌ Напишите текст ответа пользователю."
@@ -2916,11 +2913,16 @@ async def send_rep_answer(message: Message):
 @dp.message(F.text | F.photo | F.video | F.document)
 async def report_messages(message: Message):
 
-    # Нет активного обращения — этот обработчик ничего не делает
+    # Если редактор сейчас отвечает через /repsms,
+    # не трогаем его сообщение здесь
+    if message.from_user.id in waiting_rep_answer:
+        return
+
+    # Если нет активного обращения — ничего не делаем
     if message.from_user.id not in active_reports:
         return
 
-    # Команды не записываем в историю
+    # Команды не сохраняем
     if message.text and message.text.startswith("/"):
         await message.answer(
             "❌ Сначала завершите обращение командой /endreport."
@@ -2930,7 +2932,6 @@ async def report_messages(message: Message):
     report_id = active_reports[message.from_user.id]
 
     text = message.text if message.text else None
-
     file_id = None
     file_type = None
 
@@ -2950,7 +2951,7 @@ async def report_messages(message: Message):
         """
         INSERT INTO report_messages
         (report_id, sender, text, file_id, file_type)
-        VALUES(%s, %s, %s, %s, %s)
+        VALUES(%s,%s,%s,%s,%s)
         """,
         (
             report_id,
@@ -2960,7 +2961,7 @@ async def report_messages(message: Message):
             file_type
         )
     )
-
+    
 @dp.message()
 async def save_zbt(message: Message):
 
