@@ -2100,7 +2100,7 @@ async def set_commands(bot):
         BotCommand(command="del", description="Удалить пост о збт"),
         BotCommand(command="repadm", description="Изменить репутацию "),
         BotCommand(command="casino", description="Информация о казино"),
-        BotCommand(command="carplist", description="Айди автомобилей "),
+        BotCommand(command="carlist", description="Айди автомобилей ")
     ]
 
     await bot.set_my_commands(commands)
