@@ -2308,56 +2308,208 @@ async def addbiz(message: Message):
 @dp.message(Command("logs"))
 async def logs(message: Message):
 
+    if message.chat.type != "private":
+        return
+
     if not await check_sub(bot, CHANNEL_ID, message):
         await require_sub(message)
         return
 
     await register_user(bot, OWNER_ID, message)
 
-    
+    if not is_creator(message.from_user.id):
+        await message.answer("Недостаточно прав.")
+        return
+
+    page = 1
+    per_page = 10
+
+    rows = execute(
+        """
+        SELECT user_id, username, action, created_at
+        FROM logs
+        ORDER BY id DESC
+        LIMIT %s OFFSET %s
+        """,
+        (per_page, (page - 1) * per_page)
+    ).fetchall()
+
+    if not rows:
+        await message.answer("📜 Логи пусты.")
+        return
+
+    text = f"📜 <b>Логи</b> — страница {page}\n\n"
+
+    for user_id, username, action, created_at in rows:
+
+        username_text = f"@{username}" if username else "без username"
+
+        text += (
+            f"👤 <b>{username_text}</b>\n"
+            f"🆔 <code>{user_id}</code>\n"
+            f"📝 {action}\n"
+            f"🕒 {created_at.strftime('%d.%m.%Y %H:%M:%S')}\n\n"
+        )
+
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="➡️ Следующая",
+                    callback_data=f"logs_page:{page + 1}:{message.from_user.id}"
+                )
+            ]
+        ]
+    )
+
+    await message.answer(
+        text,
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+
+@dp.callback_query(F.data.startswith("logs_page:"))
+async def logs_page(callback: CallbackQuery):
+
+    _, page, owner_id = callback.data.split(":")
+
+    page = int(page)
+    owner_id = int(owner_id)
+
+    if callback.from_user.id != owner_id:
+        username = (
+            f"@{callback.from_user.username}"
+            if callback.from_user.username
+            else callback.from_user.first_name
+        )
+
+        await callback.answer(
+            f"{username}, эта кнопка создана не для тебя. Напиши /logs, чтобы использовать свои кнопки.",
+            show_alert=True
+        )
+        return
+
+    if not is_creator(callback.from_user.id):
+        await callback.answer("Недостаточно прав.", show_alert=True)
+        return
+
+    per_page = 10
+    offset = (page - 1) * per_page
+
+    rows = execute(
+        """
+        SELECT user_id, username, action, created_at
+        FROM logs
+        ORDER BY id DESC
+        LIMIT %s OFFSET %s
+        """,
+        (per_page, offset)
+    ).fetchall()
+
+    if not rows:
+        await callback.answer("Это последняя страница.", show_alert=True)
+        return
+
+    text = f"📜 <b>Логи</b> — страница {page}\n\n"
+
+    for user_id, username, action, created_at in rows:
+
+        username_text = f"@{username}" if username else "без username"
+
+        text += (
+            f"👤 <b>{username_text}</b>\n"
+            f"🆔 <code>{user_id}</code>\n"
+            f"📝 {action}\n"
+            f"🕒 {created_at.strftime('%d.%m.%Y %H:%M:%S')}\n\n"
+        )
+
+    buttons = []
+
+    if page > 1:
+        buttons.append(
+            InlineKeyboardButton(
+                text="⬅️ Назад",
+                callback_data=f"logs_page:{page - 1}:{owner_id}"
+            )
+        )
+
+    buttons.append(
+        InlineKeyboardButton(
+            text="➡️ Далее",
+            callback_data=f"logs_page:{page + 1}:{owner_id}"
+        )
+    )
+
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[buttons]
+    )
+
+    await callback.message.edit_text(
+        text,
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+
+    await callback.answer()
+
+@dp.message(Command("checkrole"))
+async def checkrole(message: Message):
+
+    if message.chat.type != "private":
+        return
+
+    if not await check_sub(bot, CHANNEL_ID, message):
+        await require_sub(message)
+        return
+
+    await register_user(bot, OWNER_ID, message)
+
     if not is_creator(message.from_user.id):
         await message.answer("Недостаточно прав.")
         return
 
     rows = execute(
         """
-        SELECT user_id, action, created_at
-        FROM logs
-        ORDER BY id DESC
-        LIMIT 20
+        SELECT
+            r.user_id,
+            u.username,
+            u.first_name,
+            r.role
+        FROM roles r
+        LEFT JOIN users u ON u.user_id = r.user_id
+        ORDER BY r.role DESC, r.user_id
         """
     ).fetchall()
 
     if not rows:
-        await message.answer("Логи пусты.")
+        await message.answer("❌ Пользователей с ролями нет.")
         return
 
-    text = "📜 Последние действия\n\n"
+    roles = {
+        0: "Пользователь",
+        1: "Редактор",
+        2: "Создатель"
+    }
 
-    for user_id, action, created_at in rows:
+    text = "👮 <b>Пользователи с ролями</b>\n\n"
+
+    for user_id, username, first_name, role in rows:
+
+        role_name = roles.get(role, f"Неизвестная ({role})")
+
+        username_text = f"@{username}" if username else "без username"
+
         text += (
-            f"👤 {user_id}\n"
-            f"📝 {action}\n"
-            f"🕒 {created_at}\n\n"
+            f"👤 <b>{first_name or 'Без имени'}</b>\n"
+            f"📛 {username_text}\n"
+            f"🆔 <code>{user_id}</code>\n"
+            f"🛡 Роль: <b>{role_name}</b>\n\n"
         )
 
-    await message.answer(text)
-
-@dp.message(Command("checkrole"))
-async def checkrole(message: Message):
-
-    if not await check_sub(bot, CHANNEL_ID, message):
-        await require_sub(message)
-        return
-
-    await register_user(bot, OWNER_ID, message)
-
-    
-    rows = execute(
-        "SELECT * FROM roles"
-    ).fetchall()
-
-    await message.answer(str(rows))
+    await message.answer(
+        text,
+        parse_mode="HTML"
+    )
     
 @dp.callback_query(F.data == "biz")
 async def biz(callback: CallbackQuery):
