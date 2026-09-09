@@ -3094,9 +3094,6 @@ async def rep(message: Message):
 @dp.message(Command("topadmin"))
 async def topadmin(message: Message):
 
-    if get_role(message.from_user.id) < 1:
-        return
-
     best = execute("""
         SELECT nickname, position, reputation
         FROM admins
@@ -3111,36 +3108,39 @@ async def topadmin(message: Message):
         LIMIT 3
     """).fetchall()
 
-    text = "🏆 Топ администраторов\n\n"
+    text = "🏆 <b>Топ администраторов</b>\n\n"
 
-    text += "📈 Топ лучших:\n"
+    text += "📈 <b>Топ лучших:</b>\n\n"
 
     medals = ["🥇", "🥈", "🥉"]
 
     if best:
         for i, (nick, pos, rep) in enumerate(best):
             text += (
-                f"{medals[i]} {nick}\n"
+                f"{medals[i]} <b>{nick}</b>\n"
                 f"💼 {pos}\n"
                 f"⭐ {rep}\n\n"
             )
     else:
         text += "Нет данных.\n\n"
 
-    text += "📉 Топ худших:\n"
+    text += "📉 <b>Топ худших:</b>\n\n"
 
     if worst:
         for i, (nick, pos, rep) in enumerate(worst):
             text += (
-                f"{medals[i]} {nick}\n"
+                f"{medals[i]} <b>{nick}</b>\n"
                 f"💼 {pos}\n"
                 f"⭐ {rep}\n\n"
             )
     else:
         text += "Нет данных."
 
-    await message.answer(text)
-
+    await message.answer(
+        text,
+        parse_mode="HTML"
+    )
+    
 @dp.message(Command("bug"))
 async def bug(message: Message):
 
